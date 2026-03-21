@@ -25,8 +25,9 @@ export class InvoicesService {
     if (!plan) throw new NotFoundException('Plan not found');
 
     // Calculate next invoice number (starts at 1000)
-    const lastInvoice = await this.invoiceRepository.findOne({
+    const [lastInvoice] = await this.invoiceRepository.find({
       order: { invoiceNumber: 'DESC' },
+      take: 1,
     });
     const nextInvoiceNumber =
       lastInvoice && lastInvoice.invoiceNumber
@@ -50,7 +51,7 @@ export class InvoicesService {
     if (member.expirationDate && new Date(member.expirationDate) > new Date()) {
       baseDate = new Date(member.expirationDate);
     }
-    baseDate.setDate(baseDate.getDate() + Number(plan.durationDays));
+    baseDate.setMonth(baseDate.getMonth() + 1);
     const formattedExpDate = baseDate.toISOString().split('T')[0];
     await this.membersService.update(member.id, { expirationDate: formattedExpDate });
 
@@ -71,5 +72,10 @@ export class InvoicesService {
     });
     if (!invoice) throw new NotFoundException('Invoice not found');
     return invoice;
+  }
+
+  async remove(id: string) {
+    const invoice = await this.findOne(id);
+    return await this.invoiceRepository.remove(invoice);
   }
 }

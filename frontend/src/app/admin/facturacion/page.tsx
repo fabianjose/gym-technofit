@@ -1,7 +1,7 @@
 "use client";
 import React, { useEffect, useState, useMemo, Suspense } from 'react';
 import axios from 'axios';
-import { CheckCircle, Search, X } from 'lucide-react';
+import { CheckCircle, Search, X, Trash2 } from 'lucide-react';
 import { useSearchParams } from 'next/navigation';
 
 function FacturacionContent() {
@@ -114,6 +114,18 @@ function FacturacionContent() {
     setSearchQuery('');
     setSelectedPlanId('');
     setSelectedDiscountId('');
+  };
+
+  const handleDeleteInvoice = async (invoiceId: string) => {
+    if (!window.confirm("¿Seguro que deseas eliminar esta factura de prueba?")) return;
+    try {
+      const token = localStorage.getItem('token');
+      await axios.delete(`http://localhost:3001/api/invoices/${invoiceId}`, { headers: { Authorization: `Bearer ${token}` } });
+      fetchData(); // reload
+    } catch (e) {
+      console.error(e);
+      alert('Error eliminando la factura.');
+    }
   };
 
   return (
@@ -296,6 +308,7 @@ function FacturacionContent() {
                 <th style={thStyle}>Descuento</th>
                 <th style={thStyle}>Total</th>
                 <th style={thStyle}>Fecha</th>
+                <th style={{ ...thStyle, textAlign: 'center' }}>Acción</th>
               </tr>
             </thead>
             <tbody>
@@ -314,6 +327,11 @@ function FacturacionContent() {
                     <td style={tdStyle}>{inv.discount ? `${inv.discount.name} (${inv.discount.percentage}%)` : '—'}</td>
                     <td style={{ ...tdStyle, fontWeight: 'bold', color: 'var(--primary-color)' }}>${Number(inv.amountTotal).toLocaleString()} COP</td>
                     <td style={{ ...tdStyle, color: 'var(--text-muted)' }}>{new Date(inv.createdAt).toLocaleDateString()}</td>
+                    <td style={{ ...tdStyle, textAlign: 'center' }}>
+                      <button onClick={() => handleDeleteInvoice(inv.id)} style={{ background: 'var(--danger)', color: 'white', border: 'none', padding: '0.4rem', borderRadius: '6px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }} title="Eliminar factura de prueba">
+                        <Trash2 size={16} />
+                      </button>
+                    </td>
                   </tr>
                 ))
               )}
