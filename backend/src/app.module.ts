@@ -56,6 +56,8 @@ import { CronModule } from './cron/cron.module';
           GymConfig, Plan, Discount, Invoice
         ],
         synchronize: true,
+        timezone: 'Z',
+        extra: { dateStrings: true },
       }),
       inject: [ConfigService],
     }),

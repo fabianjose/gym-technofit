@@ -50,8 +50,16 @@ export default function MiembrosPage() {
   }, []);
 
   const fetchMembers = async () => {
-    const res = await axios.get('http://localhost:3001/api/members', { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } });
-    setMembers(res.data);
+    try {
+      const response = await axios.get('http://localhost:3001/api/members', {
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+      });
+      console.log('--- RECIBIDO DE BACKEND ---');
+      console.log('Lista cruda (primer elemento si existe):', response.data[0]);
+      setMembers(response.data);
+    } catch (error) {
+      console.error('Error fetching members:', error);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -73,13 +81,17 @@ export default function MiembrosPage() {
       whatsappNotifyMinute: minute,
       birthDate: form.birthDate || null,
       registrationDate: form.registrationDate || null,
-      expirationDate: form.expirationDate || null,
+      // expirationDate la calcula el backend desde registrationDate
+      expirationDate: undefined,
       measurements
     };
     
     const headers = { Authorization: `Bearer ${localStorage.getItem('token')}` };
 
     try {
+      console.log('--- ENVIANDO A BACKEND ---');
+      console.log('Payload de fechas:', { birthDate: data.birthDate, registrationDate: data.registrationDate });
+      
       if (editingId) {
         await axios.put(`http://localhost:3001/api/members/${editingId}`, data, { headers });
         showSuccess('Miembro actualizado exitosamente');
@@ -91,12 +103,14 @@ export default function MiembrosPage() {
       resetForm();
       fetchMembers();
     } catch (err: any) {
-      if (err.response?.status === 500 || err.response?.status === 409) {
-        showError('Error al guardar. Es posible que la Cédula ya esté registrada o los datos sean inválidos.');
+      const backendMsg = err.response?.data?.message || err.response?.data?.error || err.message || 'Error desconocido';
+      const status = err.response?.status;
+      if (status === 409 || (typeof backendMsg === 'string' && backendMsg.toLowerCase().includes('duplicate'))) {
+        showError('La Cédula ya está registrada en otro miembro.');
       } else {
-        showError(err.response?.data?.message || 'Ocurrió un error inesperado al guardar.');
+        showError(`Error ${status || ''}: ${Array.isArray(backendMsg) ? backendMsg.join(', ') : backendMsg}`);
       }
-      console.error(err);
+      console.error('Update error:', err.response?.data, err);
     }
   };
 
@@ -104,15 +118,25 @@ export default function MiembrosPage() {
     setEditingId(m.id);
     const h = m.whatsappNotifyHour ? m.whatsappNotifyHour.toString().padStart(2, '0') : '07';
     const min = m.whatsappNotifyMinute ? m.whatsappNotifyMinute.toString().padStart(2, '0') : '00';
+    
+    // Función para extraer el YYYY-MM-DD sin pasar por Date() para evitar desfase de zona horaria
+    const extractDateStr = (dateVal: any) => {
+      if (!dateVal) return '';
+      const s = dateVal.toString();
+      if (/^\d{4}-\d{2}-\d{2}/.test(s)) return s.substring(0, 10);
+      const match = s.match(/(\d{4}-\d{2}-\d{2})/);
+      return match ? match[1] : '';
+    };
+
     setForm({
       cedula: m.cedula,
       fullName: m.fullName,
       email: m.email || '',
       whatsappNumber: m.whatsappNumber || '+57',
       notifyTime: `${h}:${min}`,
-      birthDate: m.birthDate ? m.birthDate.toString().substring(0, 10) : '',
-      registrationDate: m.registrationDate ? m.registrationDate.toString().substring(0, 10) : new Date().toISOString().split('T')[0],
-      expirationDate: m.expirationDate ? m.expirationDate.toString().substring(0, 10) : ''
+      birthDate: extractDateStr(m.birthDate),
+      registrationDate: extractDateStr(m.registrationDate) || new Date().toISOString().split('T')[0],
+      expirationDate: extractDateStr(m.expirationDate)
     });
     setMeasurements({
       peso: m.measurements?.peso || '',
@@ -305,10 +329,10 @@ export default function MiembrosPage() {
                   <div>{m.whatsappNumber}</div>
                 </td>
                 <td style={{ padding: '1rem', fontSize: '0.9rem', color: 'var(--text-muted)' }}>
-                  {m.registrationDate ? new Date(m.registrationDate).toLocaleDateString() : 'N/A'}
+                  {m.registrationDate?.toString().substring(0,10).split('-').reverse().join('/') || 'N/A'}
                 </td>
                 <td style={{ padding: '1rem', fontSize: '0.9rem', color: 'var(--text-muted)' }}>
-                  {m.expirationDate ? new Date(m.expirationDate).toLocaleDateString() : 'Por Facturar'}
+                  {m.expirationDate?.toString().substring(0,10).split('-').reverse().join('/') || 'Por Facturar'}
                 </td>
                 <td style={{ padding: '1rem', display: 'flex', gap: '0.5rem', justifyContent: 'center' }}>
                   <Link href={`/admin/rutinas/${m.id}`} className="btn-secondary" style={{ padding: '0.5rem 1rem', fontSize: '0.85rem' }}>Ver Rutina</Link>

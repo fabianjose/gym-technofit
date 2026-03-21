@@ -51,7 +51,8 @@ export class InvoicesService {
       baseDate = new Date(member.expirationDate);
     }
     baseDate.setDate(baseDate.getDate() + Number(plan.durationDays));
-    await this.membersService.update(member.id, { expirationDate: baseDate });
+    const formattedExpDate = baseDate.toISOString().split('T')[0];
+    await this.membersService.update(member.id, { expirationDate: formattedExpDate });
 
     return savedInvoice;
   }

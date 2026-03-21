@@ -48,17 +48,18 @@ export default function Dashboard() {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    // Mostrar TODOS los vencidos y por vencer (sin límite de días)
     const list = members.map((m: any) => {
       if (!m.expirationDate) return null;
-      // Parsear como UTC para evitar corrimiento de un día por zona horaria
+      // Parsear fecha como local (sin corrimiento de zona horaria)
       const expStr = m.expirationDate.toString().substring(0, 10);
       const [year, month, day] = expStr.split('-').map(Number);
       const exp = new Date(year, month - 1, day);
       exp.setHours(0, 0, 0, 0);
       const diffDays = Math.ceil((exp.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-      return { ...m, diffDays };
-    }).filter((m): m is NonNullable<typeof m> => m !== null && m.diffDays <= 3);
+      // Mostrar: vencidos (diffDays < 0) y próximos a vencer en 2 días o menos
+      if (diffDays > 2) return null;
+      return { ...m, diffDays, expDateStr: expStr };
+    }).filter((m): m is NonNullable<typeof m> => m !== null);
 
     list.sort((a: any, b: any) => a.diffDays - b.diffDays);
     return list;
@@ -111,26 +112,43 @@ export default function Dashboard() {
                   {expirations.map((m: any) => {
                     let badgeColor = '';
                     let badgeText = '';
+                    let rowHighlight = 'transparent';
+
                     if (m.diffDays < 0) {
-                      badgeColor = 'var(--danger)'; 
-                      badgeText = `Vencido (hace ${Math.abs(m.diffDays)} días)`;
+                      // Vencido
+                      badgeColor = 'var(--danger)';
+                      badgeText = `Vencido (hace ${Math.abs(m.diffDays)} día${Math.abs(m.diffDays) !== 1 ? 's' : ''})`;
+                      rowHighlight = 'rgba(255,77,77,0.06)';
                     } else if (m.diffDays === 0) {
-                      badgeColor = '#FF8C00'; // Naranja
-                      badgeText = 'Vence HOY';
+                      // Vence hoy
+                      badgeColor = '#FF4500';
+                      badgeText = '🔴 Vence HOY';
+                      rowHighlight = 'rgba(255,69,0,0.08)';
+                    } else if (m.diffDays === 1) {
+                      // Vence mañana → Naranja
+                      badgeColor = '#FF8C00';
+                      badgeText = '🟠 Vence mañana';
+                      rowHighlight = 'rgba(255,140,0,0.07)';
                     } else {
-                      badgeColor = '#FFD700'; // Amarillo oscuro (para contrastar en darkmode)
-                      badgeText = `Vence en ${m.diffDays} días`;
+                      // 2 días antes → Amarillo
+                      badgeColor = '#CCAA00';
+                      badgeText = '🟡 Vence en 2 días';
+                      rowHighlight = 'rgba(255,215,0,0.06)';
                     }
 
+                    // Mostrar fecha sin desfase de zona horaria
+                    const [y, mo, d] = m.expDateStr.split('-').map(Number);
+                    const fechaVencimiento = `${d.toString().padStart(2,'0')}/${mo.toString().padStart(2,'0')}/${y}`;
+
                     return (
-                      <tr key={m.id} style={{ borderBottom: '1px solid var(--border-color)' }}>
+                      <tr key={m.id} style={{ borderBottom: '1px solid var(--border-color)', backgroundColor: rowHighlight }}>
                         <td style={{ padding: '1rem' }}>
                           <div style={{ fontWeight: 'bold', color: '#fff' }}>{m.fullName}</div>
                           <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{m.whatsappNumber}</div>
                         </td>
                         <td style={{ padding: '1rem', color: 'var(--text-muted)' }}>{m.cedula}</td>
-                        <td style={{ padding: '1rem', color: 'var(--text-muted)' }}>
-                          {new Date(m.expirationDate).toLocaleDateString()}
+                        <td style={{ padding: '1rem', color: badgeColor, fontWeight: 'bold' }}>
+                          {fechaVencimiento}
                         </td>
                         <td style={{ padding: '1rem' }}>
                           <span style={{ 
@@ -138,7 +156,7 @@ export default function Dashboard() {
                             borderRadius: '20px', 
                             fontSize: '0.8rem', 
                             fontWeight: 'bold', 
-                            backgroundColor: `${badgeColor}20`,
+                            backgroundColor: `${badgeColor}22`,
                             color: badgeColor,
                             border: `1px solid ${badgeColor}`
                           }}>
@@ -146,15 +164,13 @@ export default function Dashboard() {
                           </span>
                         </td>
                         <td style={{ padding: '1rem', textAlign: 'right' }}>
-                          {m.diffDays <= 0 && (
-                            <button 
-                              onClick={() => router.push(`/admin/facturacion?memberId=${m.id}`)}
-                              className="btn-primary" 
-                              style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 1rem', fontSize: '0.85rem' }}
-                            >
-                              <FileText size={16} /> Crear Factura
-                            </button>
-                          )}
+                          <button 
+                            onClick={() => router.push(`/admin/facturacion?memberId=${m.id}`)}
+                            className="btn-primary" 
+                            style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 1rem', fontSize: '0.85rem' }}
+                          >
+                            <FileText size={16} /> Cobrar
+                          </button>
                         </td>
                       </tr>
                     );

@@ -27,13 +27,13 @@ export class Member {
   active: boolean;
 
   @Column({ name: 'birth_date', type: 'date', nullable: true })
-  birthDate: Date;
+  birthDate: string;
 
   @Column({ name: 'registration_date', type: 'date', nullable: true })
-  registrationDate: Date;
+  registrationDate: string;
 
   @Column({ name: 'expiration_date', type: 'date', nullable: true })
-  expirationDate: Date;
+  expirationDate: string;
 
   @Column({ type: 'json', nullable: true })
   measurements: Record<string, any>;
