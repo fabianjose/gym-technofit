@@ -74,8 +74,41 @@ export class InvoicesService {
     return invoice;
   }
 
+  async update(id: string, data: any) {
+    const invoice = await this.findOne(id);
+    if (data.planId) invoice.planId = data.planId;
+    if (data.discountId !== undefined) invoice.discountId = data.discountId || null;
+    if (data.amountTotal) invoice.amountTotal = Number(data.amountTotal);
+    return await this.invoiceRepository.save(invoice);
+  }
+
+  async annul(id: string) {
+    const invoice = await this.findOne(id);
+    if (invoice.status === 'ANNULLED') {
+      return invoice; // Ya está anulada
+    }
+    
+    if (invoice.member && invoice.member.expirationDate) {
+      const d = new Date(invoice.member.expirationDate);
+      d.setMonth(d.getMonth() - 1);
+      const formattedExpDate = d.toISOString().split('T')[0];
+      await this.membersService.update(invoice.member.id, { expirationDate: formattedExpDate });
+    }
+
+    invoice.status = 'ANNULLED';
+    return await this.invoiceRepository.save(invoice);
+  }
+
   async remove(id: string) {
     const invoice = await this.findOne(id);
+    if (invoice.status === 'PAID') {
+      if (invoice.member && invoice.member.expirationDate) {
+        const d = new Date(invoice.member.expirationDate);
+        d.setMonth(d.getMonth() - 1);
+        const formattedExpDate = d.toISOString().split('T')[0];
+        await this.membersService.update(invoice.member.id, { expirationDate: formattedExpDate });
+      }
+    }
     return await this.invoiceRepository.remove(invoice);
   }
 }

@@ -1,7 +1,7 @@
 "use client";
 import React, { useEffect, useState, useMemo, Suspense } from 'react';
 import axios from 'axios';
-import { CheckCircle, Search, X, Trash2 } from 'lucide-react';
+import { CheckCircle, Search, X, Trash2, Ban, Edit2 } from 'lucide-react';
 import { useSearchParams } from 'next/navigation';
 
 function FacturacionContent() {
@@ -22,6 +22,11 @@ function FacturacionContent() {
   const [invoices, setInvoices] = useState([]);
   const [successMsg, setSuccessMsg] = useState('');
   const [gymConfig, setGymConfig] = useState<any>(null);
+
+  // Edit states
+  const [editingInvoiceId, setEditingInvoiceId] = useState<string | null>(null);
+  const [editPlanId, setEditPlanId] = useState('');
+  const [editDiscountId, setEditDiscountId] = useState('');
 
   useEffect(() => {
     fetchData();
@@ -117,14 +122,60 @@ function FacturacionContent() {
   };
 
   const handleDeleteInvoice = async (invoiceId: string) => {
-    if (!window.confirm("¿Seguro que deseas eliminar esta factura de prueba?")) return;
+    if (!window.confirm("¿Seguro que deseas eliminar esta factura de prueba? Esto retrotraerá 1 mes la membresía del cliente para esta factura.")) return;
     try {
       const token = localStorage.getItem('token');
       await axios.delete(`http://localhost:3001/api/invoices/${invoiceId}`, { headers: { Authorization: `Bearer ${token}` } });
+      setSuccessMsg('✅ Factura de prueba eliminada.');
+      setTimeout(() => setSuccessMsg(''), 4000);
       fetchData(); // reload
     } catch (e) {
       console.error(e);
       alert('Error eliminando la factura.');
+    }
+  };
+
+  const handleAnnulInvoice = async (invoiceId: string) => {
+    if (!window.confirm("¿Seguro que deseas anular esta factura? Esto retrotraerá 1 mes la fecha de membresía del cliente.")) return;
+    try {
+      const token = localStorage.getItem('token');
+      await axios.patch(`http://localhost:3001/api/invoices/${invoiceId}/annul`, {}, { headers: { Authorization: `Bearer ${token}` } });
+      setSuccessMsg('✅ Factura anulada exitosamente.');
+      setTimeout(() => setSuccessMsg(''), 4000);
+      fetchData();
+    } catch (e) {
+      console.error(e);
+      alert('Error anulando la factura.');
+    }
+  };
+
+  const openEditModal = (inv: any) => {
+    setEditingInvoiceId(inv.id);
+    setEditPlanId(inv.planId || '');
+    setEditDiscountId(inv.discountId || '');
+  };
+
+  const handleUpdateInvoice = async () => {
+    if (!editPlanId) return;
+    const p: any = plans.find((x: any) => x.id === editPlanId);
+    const d: any = discounts.find((x: any) => x.id === editDiscountId);
+    let total = Number(p?.price || 0);
+    if (d) total = total - (total * (Number(d.percentage) / 100));
+
+    try {
+      const token = localStorage.getItem('token');
+      await axios.patch(`http://localhost:3001/api/invoices/${editingInvoiceId}`, {
+        planId: editPlanId,
+        discountId: editDiscountId || undefined,
+        amountTotal: total
+      }, { headers: { Authorization: `Bearer ${token}` } });
+      setSuccessMsg('✅ Factura editada exitosamente.');
+      setTimeout(() => setSuccessMsg(''), 4000);
+      setEditingInvoiceId(null);
+      fetchData();
+    } catch (e) {
+      console.error(e);
+      alert('Error editando factura.');
     }
   };
 
@@ -303,6 +354,7 @@ function FacturacionContent() {
             <thead>
               <tr style={{ backgroundColor: 'var(--bg-color)', borderBottom: '2px solid var(--border-color)' }}>
                 <th style={thStyle}>#</th>
+                <th style={thStyle}>Estado</th>
                 <th style={thStyle}>Cliente</th>
                 <th style={thStyle}>Plan</th>
                 <th style={thStyle}>Descuento</th>
@@ -318,17 +370,34 @@ function FacturacionContent() {
                 </tr>
               ) : (
                 invoices.map((inv: any) => (
-                  <tr key={inv.id} style={{ borderBottom: '1px solid var(--border-color)' }}>
+                  <tr key={inv.id} style={{ borderBottom: '1px solid var(--border-color)', opacity: inv.status === 'ANNULLED' ? 0.6 : 1 }}>
                     <td style={tdStyle}>
                       <span style={{ fontWeight: 'bold', color: 'var(--primary-color)' }}>#{inv.invoiceNumber}</span>
                     </td>
-                    <td style={tdStyle}><span style={{ fontWeight: 'bold' }}>{inv.member?.fullName || '—'}</span></td>
+                    <td style={tdStyle}>
+                      {inv.status === 'ANNULLED' ? (
+                        <span style={{ backgroundColor: 'transparent', color: 'var(--danger)', padding: '0.2rem 0.5rem', borderRadius: '4px', fontSize: '0.8rem', border: '1px solid var(--danger)' }}>Anulada</span>
+                      ) : (
+                        <span style={{ backgroundColor: 'var(--success)', color: '#000', padding: '0.2rem 0.5rem', borderRadius: '4px', fontSize: '0.8rem', fontWeight: 'bold' }}>Pagada</span>
+                      )}
+                    </td>
+                    <td style={tdStyle}><span style={{ fontWeight: 'bold', textDecoration: inv.status === 'ANNULLED' ? 'line-through' : 'none' }}>{inv.member?.fullName || '—'}</span></td>
                     <td style={tdStyle}>{inv.plan?.name || '—'}</td>
                     <td style={tdStyle}>{inv.discount ? `${inv.discount.name} (${inv.discount.percentage}%)` : '—'}</td>
-                    <td style={{ ...tdStyle, fontWeight: 'bold', color: 'var(--primary-color)' }}>${Number(inv.amountTotal).toLocaleString()} COP</td>
+                    <td style={{ ...tdStyle, fontWeight: 'bold', color: inv.status === 'ANNULLED' ? 'var(--text-muted)' : 'var(--primary-color)' }}>${Number(inv.amountTotal).toLocaleString()} COP</td>
                     <td style={{ ...tdStyle, color: 'var(--text-muted)' }}>{new Date(inv.createdAt).toLocaleDateString()}</td>
-                    <td style={{ ...tdStyle, textAlign: 'center' }}>
-                      <button onClick={() => handleDeleteInvoice(inv.id)} style={{ background: 'var(--danger)', color: 'white', border: 'none', padding: '0.4rem', borderRadius: '6px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }} title="Eliminar factura de prueba">
+                    <td style={{ ...tdStyle, textAlign: 'center', display: 'flex', gap: '0.5rem', justifyContent: 'center' }}>
+                      {inv.status === 'PAID' && (
+                        <>
+                          <button onClick={() => openEditModal(inv)} style={{ background: 'var(--panel-bg)', color: '#fff', border: '1px solid var(--border-color)', padding: '0.4rem', borderRadius: '6px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }} title="Editar detalles de factura">
+                            <Edit2 size={16} />
+                          </button>
+                          <button onClick={() => handleAnnulInvoice(inv.id)} style={{ background: 'var(--warning)', color: '#000', border: 'none', padding: '0.4rem', borderRadius: '6px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }} title="Anular factura (Revierte 1 mes)">
+                            <Ban size={16} />
+                          </button>
+                        </>
+                      )}
+                      <button onClick={() => handleDeleteInvoice(inv.id)} style={{ background: 'var(--danger)', color: 'white', border: 'none', padding: '0.4rem', borderRadius: '6px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }} title="Eliminar factura de sistema">
                         <Trash2 size={16} />
                       </button>
                     </td>
@@ -339,6 +408,52 @@ function FacturacionContent() {
           </table>
         </div>
       </div>
+
+      {/* MODAL DE EDICIÓN DE FACTURA */}
+      {editingInvoiceId && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.7)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
+          <div className="card" style={{ width: '100%', maxWidth: '400px', backgroundColor: 'var(--bg-color)', border: '1px solid var(--border-color)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+              <h3 style={{ margin: 0, color: '#fff' }}>Editar Factura</h3>
+              <button onClick={() => setEditingInvoiceId(null)} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}><X size={20} /></button>
+            </div>
+            
+            <div style={{ marginBottom: '1rem' }}>
+              <label style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--text-muted)', fontSize: '0.9rem' }}>Plan Seleccionado</label>
+              <select
+                value={editPlanId}
+                onChange={e => setEditPlanId(e.target.value)}
+                style={{ width: '100%', padding: '0.8rem', backgroundColor: 'var(--panel-bg)', border: '1px solid var(--border-color)', borderRadius: '8px', color: '#fff' }}
+              >
+                <option value="">-- Seleccionar --</option>
+                {plans.map((p: any) => (
+                  <option key={p.id} value={p.id}>{p.name} (${Number(p.price).toLocaleString()})</option>
+                ))}
+              </select>
+            </div>
+
+            <div style={{ marginBottom: '1.5rem' }}>
+              <label style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--text-muted)', fontSize: '0.9rem' }}>Descuento (Opcional)</label>
+              <select
+                value={editDiscountId}
+                onChange={e => setEditDiscountId(e.target.value)}
+                style={{ width: '100%', padding: '0.8rem', backgroundColor: 'var(--panel-bg)', border: '1px solid var(--border-color)', borderRadius: '8px', color: '#fff' }}
+              >
+                <option value="">-- Sin descuento --</option>
+                {discounts.map((d: any) => (
+                  <option key={d.id} value={d.id}>{d.name} ({d.percentage}%)</option>
+                ))}
+              </select>
+            </div>
+
+            <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end', marginTop: '2rem' }}>
+              <button onClick={() => setEditingInvoiceId(null)} className="btn-secondary">Cancelar</button>
+              <button onClick={handleUpdateInvoice} disabled={!editPlanId} className="btn-primary" style={{ opacity: !editPlanId ? 0.5 : 1 }}>Guardar Cambios</button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
