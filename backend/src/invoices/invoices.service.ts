@@ -5,6 +5,9 @@ import { Invoice } from './entities/invoice.entity';
 import { Repository } from 'typeorm';
 import { MembersService } from '../members/members.service';
 import { PlansService } from '../plans/plans.service';
+import { PdfService } from '../pdf/pdf.service';
+import { WhatsappService } from '../whatsapp/whatsapp.service';
+import { GymConfigService } from '../gym-config/gym-config.service';
 
 @Injectable()
 export class InvoicesService {
@@ -13,6 +16,9 @@ export class InvoicesService {
     private readonly invoiceRepository: Repository<Invoice>,
     private readonly membersService: MembersService,
     private readonly plansService: PlansService,
+    private readonly pdfService: PdfService,
+    private readonly whatsappService: WhatsappService,
+    private readonly gymConfigService: GymConfigService,
   ) {}
 
   async create(createInvoiceDto: CreateInvoiceDto) {
@@ -54,6 +60,21 @@ export class InvoicesService {
     baseDate.setMonth(baseDate.getMonth() + 1);
     const formattedExpDate = baseDate.toISOString().split('T')[0];
     await this.membersService.update(member.id, { expirationDate: formattedExpDate });
+
+    // Generate and send PDF Invoice
+    if (member.whatsappNumber) {
+      try {
+        const config = await this.gymConfigService.getGlobalConfig();
+        const fullInvoice = await this.findOne(savedInvoice.id);
+        const pdfBuffer = await this.pdfService.generateInvoicePdf(fullInvoice, config);
+        const filename = `Fac-${fullInvoice.invoiceNumber}.pdf`;
+        const caption = `✅ *Pago Confirmado*\nHola ${member.fullName}, adjuntamos tu recibo Oficial.\nGracias por entrenar en ${config?.gymName || 'nuestras instalaciones'}! 💪`;
+        
+        await this.whatsappService.sendPdf(member.whatsappNumber, pdfBuffer, filename, caption);
+      } catch (e) {
+        console.error('Error generando/enviando PDF:', e);
+      }
+    }
 
     return savedInvoice;
   }

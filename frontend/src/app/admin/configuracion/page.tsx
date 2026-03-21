@@ -9,6 +9,15 @@ export default function GymConfigPage() {
   const [gymName, setGymName] = useState('');
   const [nit, setNit] = useState('');
   const [address, setAddress] = useState('');
+  const [logoBase64, setLogoBase64] = useState('');
+  const [reminderTime, setReminderTime] = useState('08:00');
+  
+  const [smtpHost, setSmtpHost] = useState('');
+  const [smtpPort, setSmtpPort] = useState(465);
+  const [smtpUser, setSmtpUser] = useState('');
+  const [smtpPass, setSmtpPass] = useState('');
+  const [smtpFrom, setSmtpFrom] = useState('');
+  
   const [successMsg, setSuccessMsg] = useState('');
 
   useEffect(() => {
@@ -24,6 +33,13 @@ export default function GymConfigPage() {
       setGymName(res.data.gymName || '');
       setNit(res.data.nit || '');
       setAddress(res.data.address || '');
+      setLogoBase64(res.data.logoBase64 || '');
+      setReminderTime(res.data.reminderTime || '08:00');
+      setSmtpHost(res.data.smtpHost || '');
+      setSmtpPort(res.data.smtpPort || 465);
+      setSmtpUser(res.data.smtpUser || '');
+      setSmtpPass(res.data.smtpPass || '');
+      setSmtpFrom(res.data.smtpFrom || '');
     } catch (e) {
       console.error(e);
     }
@@ -38,7 +54,14 @@ export default function GymConfigPage() {
         ownerEmails: emails,
         gymName,
         nit,
-        address
+        address,
+        logoBase64,
+        reminderTime,
+        smtpHost,
+        smtpPort,
+        smtpUser,
+        smtpPass,
+        smtpFrom
       }, { headers: { Authorization: `Bearer ${token}` } });
       setSuccessMsg('Configuración guardada exitosamente.');
       setTimeout(() => setSuccessMsg(''), 3000);
@@ -68,7 +91,24 @@ export default function GymConfigPage() {
           Esta información aparecerá impresa en las facturas digitales enviadas a los clientes.
         </p>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', marginBottom: '3rem' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', marginBottom: '1.5rem' }}>
+          <div style={{ gridColumn: '1 / -1' }}>
+            <label style={{ fontWeight: 'bold', color: '#fff', display: 'block', marginBottom: '0.5rem' }}>Logo del Gimnasio</label>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+              {logoBase64 && (
+                <img src={logoBase64} alt="Logo" style={{ width: '80px', height: '80px', objectFit: 'contain', backgroundColor: '#fff', borderRadius: '8px', padding: '0.2rem' }} />
+              )}
+              <input type="file" accept="image/*" onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) {
+                  const reader = new FileReader();
+                  reader.onloadend = () => setLogoBase64(reader.result as string);
+                  reader.readAsDataURL(file);
+                }
+              }} style={{ padding: '0.5rem', flex: 1, color: '#fff' }} />
+            </div>
+          </div>
+          
           <div style={{ gridColumn: '1 / -1' }}>
             <label style={{ fontWeight: 'bold', color: '#fff', display: 'block', marginBottom: '0.5rem' }}>Nombre del Gimnasio</label>
             <input value={gymName} onChange={e => setGymName(e.target.value)} style={{ padding: '0.8rem', backgroundColor: 'var(--bg-color)', border: '1px solid var(--border-color)', borderRadius: '8px', color: '#fff', width: '100%', marginBottom: 0 }} placeholder="Ej: Flex Fitness Gym" />
@@ -82,16 +122,23 @@ export default function GymConfigPage() {
             <input value={address} onChange={e => setAddress(e.target.value)} style={{ padding: '0.8rem', backgroundColor: 'var(--bg-color)', border: '1px solid var(--border-color)', borderRadius: '8px', color: '#fff', width: '100%', marginBottom: 0 }} placeholder="Ej: Calle 123 #45-67" />
           </div>
         </div>
+      </div>
 
+      <div className="card" style={{ marginTop: '2rem' }}>
         <h3 style={{ marginBottom: '1.5rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '1rem' }}>
-          Notificaciones del Sistema
+          Notificaciones y WhatsApp
         </h3>
         <p style={{ color: 'var(--text-muted)', marginBottom: '2rem', fontSize: '0.9rem' }}>
-          A estos números de WhatsApp y correos electrónicos se enviarán los resúmenes diarios, alertas de vencimiento de clientes y recordatorios de cumpleaños. Si dejas el campo vacío, la función entrará en pausa.
+          Configura los números y correos autorizados para recibir resúmenes. El bot de WhatsApp enviará alertas de vencimiento.
         </p>
 
-        <form onSubmit={handleSave}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+            
+            <div style={{ paddingBottom: '1rem', borderBottom: '1px solid var(--border-color)' }}>
+              <label style={{ fontWeight: 'bold', color: '#fff', display: 'block', marginBottom: '0.5rem' }}>⏰ Hora de Ejecución de Tareas Programadas</label>
+              <input type="time" value={reminderTime} onChange={e => setReminderTime(e.target.value)} style={{ padding: '0.8rem', backgroundColor: 'var(--bg-color)', border: '1px solid var(--border-color)', borderRadius: '8px', color: '#fff', width: '200px' }} />
+              <p style={{ margin: '0.4rem 0 0 0', fontSize: '0.8rem', color: 'var(--text-muted)' }}>Hora a la que se envían mensajes de feliz cumpleaños y cobranzas de WhatsApp.</p>
+            </div>
             
             {/* Teléfonos */}
             <div>
@@ -149,11 +196,46 @@ export default function GymConfigPage() {
             </div>
 
           </div>
+      </div>
 
-          <button type="submit" className="btn-primary" style={{ marginTop: '2.5rem', width: '100%', padding: '1rem', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.5rem', fontSize: '1.1rem' }}>
-            <Save size={20} /> Guardar Cambios
+      <div className="card" style={{ marginTop: '2rem' }}>
+        <h3 style={{ marginBottom: '1.5rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '1rem' }}>
+          Configuración SMTP (Envío de Correos)
+        </h3>
+        <p style={{ color: 'var(--text-muted)', marginBottom: '2rem', fontSize: '0.9rem' }}>
+          Ingresa las credenciales de tu proveedor de correo (Gmail, Outlook, SendGrid, etc.) para que GymFlow envíe felicitaciones a los miembros y copias de recibos.
+        </p>
+        
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+          <div>
+            <label style={{ fontWeight: 'bold', color: '#fff', display: 'block', marginBottom: '0.5rem' }}>Servidor SMTP (Host)</label>
+            <input value={smtpHost} onChange={e => setSmtpHost(e.target.value)} style={{ padding: '0.8rem', backgroundColor: 'var(--bg-color)', border: '1px solid var(--border-color)', borderRadius: '8px', color: '#fff', width: '100%', marginBottom: 0 }} placeholder="Ej: smtp.gmail.com" />
+          </div>
+          <div>
+            <label style={{ fontWeight: 'bold', color: '#fff', display: 'block', marginBottom: '0.5rem' }}>Puerto</label>
+            <input type="number" value={smtpPort} onChange={e => setSmtpPort(Number(e.target.value))} style={{ padding: '0.8rem', backgroundColor: 'var(--bg-color)', border: '1px solid var(--border-color)', borderRadius: '8px', color: '#fff', width: '100%', marginBottom: 0 }} placeholder="465 o 587" />
+          </div>
+          <div style={{ gridColumn: '1 / -1' }}>
+            <label style={{ fontWeight: 'bold', color: '#fff', display: 'block', marginBottom: '0.5rem' }}>Correo Remitente (De:)</label>
+            <input value={smtpFrom} onChange={e => setSmtpFrom(e.target.value)} style={{ padding: '0.8rem', backgroundColor: 'var(--bg-color)', border: '1px solid var(--border-color)', borderRadius: '8px', color: '#fff', width: '100%', marginBottom: 0 }} placeholder="Ej: Gimnasio <no-reply@mi-gimnasio.com>" />
+          </div>
+          <div>
+            <label style={{ fontWeight: 'bold', color: '#fff', display: 'block', marginBottom: '0.5rem' }}>Usuario SMTP / Correo</label>
+            <input value={smtpUser} onChange={e => setSmtpUser(e.target.value)} style={{ padding: '0.8rem', backgroundColor: 'var(--bg-color)', border: '1px solid var(--border-color)', borderRadius: '8px', color: '#fff', width: '100%', marginBottom: 0 }} placeholder="Ej: gym@gmail.com" />
+          </div>
+          <div>
+            <label style={{ fontWeight: 'bold', color: '#fff', display: 'block', marginBottom: '0.5rem' }}>Contraseña de Aplicación</label>
+            <input type="password" value={smtpPass} onChange={e => setSmtpPass(e.target.value)} style={{ padding: '0.8rem', backgroundColor: 'var(--bg-color)', border: '1px solid var(--border-color)', borderRadius: '8px', color: '#fff', width: '100%', marginBottom: 0 }} placeholder="••••••••" />
+          </div>
+        </div>
+
+      </div>
+      
+      {/* Botón Guardar Flotante */}
+      <div style={{ marginTop: '2.5rem', position: 'sticky', bottom: '2rem', zIndex: 90 }}>
+          <button onClick={handleSave} className="btn-primary" style={{ width: '100%', padding: '1.2rem', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.5rem', fontSize: '1.2rem', boxShadow: '0 8px 16px rgba(119, 237, 101, 0.4)' }}>
+            <Save size={24} /> Guardar Toda la Configuración
           </button>
-        </form>
       </div>
     </div>
   );

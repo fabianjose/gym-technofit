@@ -22,4 +22,31 @@ export class UpdateGymConfigDto {
   @IsString()
   @IsOptional()
   address?: string;
+
+  @IsString()
+  @IsOptional()
+  logoBase64?: string;
+
+  @IsString()
+  @IsOptional()
+  reminderTime?: string;
+
+  @IsString()
+  @IsOptional()
+  smtpHost?: string;
+
+  @IsOptional()
+  smtpPort?: number;
+
+  @IsString()
+  @IsOptional()
+  smtpUser?: string;
+
+  @IsString()
+  @IsOptional()
+  smtpPass?: string;
+
+  @IsString()
+  @IsOptional()
+  smtpFrom?: string;
 }

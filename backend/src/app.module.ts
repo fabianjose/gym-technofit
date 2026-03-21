@@ -34,9 +34,11 @@ import { DiscountsModule } from './discounts/discounts.module';
 import { InvoicesModule } from './invoices/invoices.module';
 import { GymConfigModule } from './gym-config/gym-config.module';
 import { CronModule } from './cron/cron.module';
+import { PdfModule } from './pdf/pdf.module';
 
 @Module({
   imports: [
+    PdfModule,
     ConfigModule.forRoot({
       isGlobal: true,
     }),

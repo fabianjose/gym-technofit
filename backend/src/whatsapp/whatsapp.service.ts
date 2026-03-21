@@ -31,7 +31,10 @@ export class WhatsappService implements OnModuleInit {
   private initializeClient() {
     try {
       this.client = new Client({
-        authStrategy: new LocalAuth(),
+        authStrategy: new LocalAuth({
+          clientId: 'gymflow-admin',
+          dataPath: './.wwebjs_auth'
+        }),
         puppeteer: { args: ['--no-sandbox', '--disable-setuid-sandbox'] }
       });
 
@@ -135,26 +138,50 @@ export class WhatsappService implements OnModuleInit {
 
   async send(to: string, message: string, memberId: number) {
     this.logger.log(`Sending WhatsApp to ${to}`);
-    let status = 'failed';
-    try {
-      if (this.isConnected) {
-        const chatId = to.includes('@c.us') ? to : `${to.replace(/[^0-9]/g, '')}@c.us`;
-        await this.client.sendMessage(chatId, message);
-        status = 'sent';
-      } else {
-        throw new Error('No conectado');
-      }
-    } catch (e) {
-      this.logger.error(`Error enviando mensaje a ${to}`, e);
+    if (!this.isConnected) {
+      this.logger.warn('WhatsApp not connected');
+      return;
     }
     
-    const logEntry = this.logsRepository.create({
-      memberId,
-      sentAt: new Date(),
-      status,
-      messageBody: message,
-    });
-    await this.logsRepository.save(logEntry);
+    try {
+      const formattedTo = to.includes('@c.us') ? to : `${to.replace(/[^0-9]/g, '')}@c.us`;
+      await this.client.sendMessage(formattedTo, message);
+      
+      const log = new WhatsappLog();
+      log.memberId = memberId;
+      log.messageBody = message;
+      log.sentAt = new Date();
+      log.status = 'SENT';
+      await this.logsRepository.save(log);
+    } catch (e) {
+      this.logger.error('Error sending message', e);
+      const log = new WhatsappLog();
+      log.memberId = memberId;
+      log.messageBody = message;
+      log.sentAt = new Date();
+      log.status = 'FAILED';
+      log.errorMessage = e.message;
+      await this.logsRepository.save(log);
+    }
+  }
+
+  async sendPdf(to: string, pdfBuffer: Buffer, filename: string, caption: string) {
+    if (!this.isConnected) {
+      this.logger.warn('WhatsApp no conectado. No se enviará el PDF.');
+      return false;
+    }
+    
+    try {
+      const { MessageMedia } = require('whatsapp-web.js');
+      const formattedTo = to.includes('@c.us') ? to : `${to.replace(/[^0-9]/g, '')}@c.us`;
+      const media = new MessageMedia('application/pdf', pdfBuffer.toString('base64'), filename);
+      await this.client.sendMessage(formattedTo, media, { caption });
+      this.logger.log(`PDF enviado exitosamente a ${formattedTo}`);
+      return true;
+    } catch (e) {
+      this.logger.error(`Error enviando PDF a ${to}`, e);
+      return false;
+    }
   }
 
   async getLogs(): Promise<any[]> {
