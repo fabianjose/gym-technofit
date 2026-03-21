@@ -31,6 +31,13 @@ export class MembersService {
   }
 
   async create(data: Partial<Member>): Promise<Member> {
+    // Si no viene expirationDate, calcular automáticamente como registrationDate + 1 mes
+    if (!data.expirationDate && data.registrationDate) {
+      const reg = new Date(data.registrationDate);
+      const exp = new Date(reg);
+      exp.setMonth(exp.getMonth() + 1);
+      data.expirationDate = exp;
+    }
     const member = this.membersRepository.create(data);
     return this.membersRepository.save(member);
   }

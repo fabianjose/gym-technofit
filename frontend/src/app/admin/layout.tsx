@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
-import { Home, Users, Dumbbell, CalendarRange, LogOut, Tag } from 'lucide-react';
+import { Home, Users, Dumbbell, LogOut, Tag, CreditCard, Percent, FileText, Settings, Smartphone, UploadCloud, MessageSquare } from 'lucide-react';
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -37,6 +37,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           <Link href="/admin/miembros" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.75rem', borderRadius: '8px', backgroundColor: pathname.includes('miembros') ? 'var(--primary-color)' : 'transparent', color: pathname.includes('miembros') ? '#fff' : 'inherit' }}><Users size={20} /> Miembros</Link>
           <Link href="/admin/categorias" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.75rem', borderRadius: '8px', backgroundColor: pathname.includes('categorias') ? 'var(--primary-color)' : 'transparent', color: pathname.includes('categorias') ? '#fff' : 'inherit' }}><Tag size={20} /> Categorías</Link>
           <Link href="/admin/maquinas" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.75rem', borderRadius: '8px', backgroundColor: pathname.includes('maquinas') ? 'var(--primary-color)' : 'transparent', color: pathname.includes('maquinas') ? '#fff' : 'inherit' }}><Dumbbell size={20} /> Máquinas</Link>
+          <Link href="/admin/planes" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.75rem', borderRadius: '8px', backgroundColor: pathname.includes('planes') ? 'var(--primary-color)' : 'transparent', color: pathname.includes('planes') ? '#fff' : 'inherit' }}><CreditCard size={20} /> Planes</Link>
+          <Link href="/admin/descuentos" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.75rem', borderRadius: '8px', backgroundColor: pathname.includes('descuentos') ? 'var(--primary-color)' : 'transparent', color: pathname.includes('descuentos') ? '#fff' : 'inherit' }}><Percent size={20} /> Descuentos</Link>
+          <Link href="/admin/facturacion" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.75rem', borderRadius: '8px', backgroundColor: pathname.includes('facturacion') ? 'var(--primary-color)' : 'transparent', color: pathname.includes('facturacion') ? '#fff' : 'inherit' }}><FileText size={20} /> Facturación</Link>
+          <Link href="/admin/configuracion" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.75rem', borderRadius: '8px', backgroundColor: pathname.includes('configuracion') ? 'var(--primary-color)' : 'transparent', color: pathname.includes('configuracion') ? '#fff' : 'inherit' }}><Settings size={20} /> Configuración</Link>
+          <Link href="/admin/whatsapp" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.75rem', borderRadius: '8px', backgroundColor: pathname.includes('whatsapp') ? 'var(--primary-color)' : 'transparent', color: pathname.includes('whatsapp') ? '#fff' : 'inherit' }}><Smartphone size={20} /> WhatsApp</Link>
+          <Link href="/admin/carga-masiva" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.75rem', borderRadius: '8px', backgroundColor: pathname.includes('carga-masiva') ? 'var(--primary-color)' : 'transparent', color: pathname.includes('carga-masiva') ? '#fff' : 'inherit' }}><UploadCloud size={20} /> Carga CSV</Link>
+          <Link href="/admin/mensajes" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.75rem', borderRadius: '8px', backgroundColor: pathname.includes('mensajes') ? 'var(--primary-color)' : 'transparent', color: pathname.includes('mensajes') ? '#fff' : 'inherit' }}><MessageSquare size={20} /> Mensajes Masivos</Link>
         </nav>
         <button onClick={handleLogout} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.75rem', color: 'var(--danger)', marginTop: 'auto' }}>
           <LogOut size={20} /> Cerrar Sesión

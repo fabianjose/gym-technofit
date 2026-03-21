@@ -24,6 +24,16 @@ import { CalendarEntry } from './calendar/entities/calendar-entry.entity';
 import { CalendarEntryExercise } from './calendar/entities/calendar-entry-exercise.entity';
 import { WhatsappLog } from './whatsapp/entities/whatsapp-log.entity';
 import { Category } from './categories/entities/category.entity';
+import { Plan } from './plans/entities/plan.entity';
+import { Discount } from './discounts/entities/discount.entity';
+import { Invoice } from './invoices/entities/invoice.entity';
+import { GymConfig } from './gym-config/entities/gym-config.entity';
+
+import { PlansModule } from './plans/plans.module';
+import { DiscountsModule } from './discounts/discounts.module';
+import { InvoicesModule } from './invoices/invoices.module';
+import { GymConfigModule } from './gym-config/gym-config.module';
+import { CronModule } from './cron/cron.module';
 
 @Module({
   imports: [
@@ -42,7 +52,8 @@ import { Category } from './categories/entities/category.entity';
         database: configService.get<string>('DB_DATABASE'),
         entities: [
           Admin, Member, Machine, RoutineTemplate, RoutineDay, RoutineDayExercise,
-          CalendarEntry, CalendarEntryExercise, WhatsappLog, Category
+          CalendarEntry, CalendarEntryExercise, WhatsappLog, Category,
+          GymConfig, Plan, Discount, Invoice
         ],
         synchronize: true,
       }),
@@ -56,7 +67,12 @@ import { Category } from './categories/entities/category.entity';
     MachinesModule,
     RoutinesModule,
     CalendarModule,
-    CategoriesModule
+    CategoriesModule,
+    PlansModule,
+    DiscountsModule,
+    InvoicesModule,
+    GymConfigModule,
+    CronModule
   ],
   controllers: [AppController],
   providers: [AppService],

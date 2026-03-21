@@ -10,3 +10,5 @@ backend/node_modules/
 coverage/
 *.log
 .vscode/
+backend/.wwebjs_auth/
+backend/.wwebjs_cache/

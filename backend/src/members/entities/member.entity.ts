@@ -26,6 +26,18 @@ export class Member {
   @Column({ type: 'boolean', default: true })
   active: boolean;
 
+  @Column({ name: 'birth_date', type: 'date', nullable: true })
+  birthDate: Date;
+
+  @Column({ name: 'registration_date', type: 'date', nullable: true })
+  registrationDate: Date;
+
+  @Column({ name: 'expiration_date', type: 'date', nullable: true })
+  expirationDate: Date;
+
+  @Column({ type: 'json', nullable: true })
+  measurements: Record<string, any>;
+
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 

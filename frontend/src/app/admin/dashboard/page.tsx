@@ -1,17 +1,20 @@
 "use client";
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import axios from 'axios';
+import { useRouter } from 'next/navigation';
+import { AlertCircle, FileText, Smartphone } from 'lucide-react';
 
 export default function Dashboard() {
+  const router = useRouter();
   const [stats, setStats] = useState({ activeMembers: '--', machines: '--', notificationsToday: '--' });
-  const [waStatus, setWaStatus] = useState({ connected: false, qr: '' });
+  const [waStatus, setWaStatus] = useState({ connected: false });
   const [waLogs, setWaLogs] = useState([]);
+  const [members, setMembers] = useState([]);
 
   useEffect(() => {
     fetchStats();
     fetchWa();
-    const i = setInterval(fetchWa, 5000);
-    return () => clearInterval(i);
+    fetchMembers();
   }, []);
 
   const fetchStats = async () => {
@@ -28,13 +31,41 @@ export default function Dashboard() {
         axios.get('http://localhost:3001/api/whatsapp/status', { headers }),
         axios.get('http://localhost:3001/api/whatsapp/logs', { headers })
       ]);
-      setWaStatus(statusRes.data);
+      setWaStatus({ connected: statusRes.data.connected });
       setWaLogs(logsRes.data);
     } catch (e) {}
   };
 
+  const fetchMembers = async () => {
+    try {
+      const headers = { Authorization: `Bearer ${localStorage.getItem('token')}` };
+      const res = await axios.get('http://localhost:3001/api/members', { headers });
+      setMembers(res.data);
+    } catch (e) {}
+  };
+
+  const expirations = useMemo(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    // Mostrar TODOS los vencidos y por vencer (sin límite de días)
+    const list = members.map((m: any) => {
+      if (!m.expirationDate) return null;
+      // Parsear como UTC para evitar corrimiento de un día por zona horaria
+      const expStr = m.expirationDate.toString().substring(0, 10);
+      const [year, month, day] = expStr.split('-').map(Number);
+      const exp = new Date(year, month - 1, day);
+      exp.setHours(0, 0, 0, 0);
+      const diffDays = Math.ceil((exp.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+      return { ...m, diffDays };
+    }).filter((m): m is NonNullable<typeof m> => m !== null && m.diffDays <= 3);
+
+    list.sort((a: any, b: any) => a.diffDays - b.diffDays);
+    return list;
+  }, [members]);
+
   return (
-    <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+    <div style={{ maxWidth: '1200px', margin: '0 auto', paddingBottom: '2rem' }}>
       <h2 className="title" style={{ textAlign: 'left', fontSize: '2rem' }}>Dashboard</h2>
       
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '2rem', marginBottom: '2rem' }}>
@@ -54,74 +85,105 @@ export default function Dashboard() {
         </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '2rem' }}>
-        {/* WhatsApp Connection Module */}
-        <div className="card" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
-          <h3 style={{ marginBottom: '1rem', color: 'var(--primary-color)' }}>📱 Módulo WhatsApp</h3>
-          <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginBottom: '1.5rem' }}>
-            {waStatus.connected 
-              ? 'El sistema está conectado y enviará los mensajes de rutina automáticamente a las horas configuradas.' 
-              : 'Escanea el código QR con tu aplicación de WhatsApp (Dispositivos Vinculados) para autorizar los envíos.'}
-          </p>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '2rem', marginBottom: '2rem' }}>
+        
+        {/* Vencimientos Panel */}
+        <div className="card" style={{ gridColumn: '1 / -1' }}>
+          <h3 style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--danger)' }}>
+            <AlertCircle size={22} /> Próximos a Vencer y Vencidos
+          </h3>
           
-          {!waStatus.connected && waStatus.qr ? (
-            <div style={{ padding: '10px', backgroundColor: 'white', borderRadius: '8px' }}>
-              <img src={waStatus.qr} alt="WhatsApp QR" style={{ width: '250px', height: '250px' }} />
-            </div>
-          ) : !waStatus.connected ? (
-            <div style={{ width: '250px', height: '250px', border: '2px dashed var(--border-color)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <span style={{ color: 'var(--text-muted)' }}>Generando QR...</span>
-            </div>
-          ) : (
-            <div style={{ width: '250px', height: '250px', backgroundColor: 'rgba(0, 210, 138, 0.1)', border: '2px solid var(--success)', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column' }}>
-              <span style={{ fontSize: '4rem', marginBottom: '1rem' }}>🤖</span>
-              <span style={{ color: 'var(--success)', fontWeight: 'bold' }}>Bot Activo</span>
-            </div>
-          )}
+          <div style={{ overflowX: 'auto' }}>
+            {expirations.length === 0 ? (
+              <p style={{ color: 'var(--text-muted)', textAlign: 'center', margin: '2rem 0' }}>No hay usuarios próximos a vencer.</p>
+            ) : (
+              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <thead>
+                  <tr style={{ borderBottom: '2px solid var(--border-color)', textAlign: 'left' }}>
+                    <th style={{ padding: '0.8rem' }}>Cliente</th>
+                    <th style={{ padding: '0.8rem' }}>Cédula</th>
+                    <th style={{ padding: '0.8rem' }}>Vencimiento</th>
+                    <th style={{ padding: '0.8rem' }}>Estado</th>
+                    <th style={{ padding: '0.8rem', textAlign: 'right' }}>Acción</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {expirations.map((m: any) => {
+                    let badgeColor = '';
+                    let badgeText = '';
+                    if (m.diffDays < 0) {
+                      badgeColor = 'var(--danger)'; 
+                      badgeText = `Vencido (hace ${Math.abs(m.diffDays)} días)`;
+                    } else if (m.diffDays === 0) {
+                      badgeColor = '#FF8C00'; // Naranja
+                      badgeText = 'Vence HOY';
+                    } else {
+                      badgeColor = '#FFD700'; // Amarillo oscuro (para contrastar en darkmode)
+                      badgeText = `Vence en ${m.diffDays} días`;
+                    }
 
-          {waStatus.connected && (
-            <button 
-              onClick={async () => {
-                if (confirm('¿Seguro de desconectar WhatsApp? Tendrás que volver a escanear el código QR para autorizar los envíos.')) {
-                  setWaStatus({ connected: false, qr: '' });
-                  try {
-                    await axios.post('http://localhost:3001/api/whatsapp/logout', {}, { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } });
-                  } catch (e) {}
-                }
-              }}
-              style={{ background: 'var(--danger)', color: 'white', border: 'none', padding: '0.8rem 1.5rem', marginTop: '1.5rem', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', fontSize: '1rem', width: '100%', maxWidth: '250px' }}>
-              Desconectar WhatsApp
-            </button>
-          )}
+                    return (
+                      <tr key={m.id} style={{ borderBottom: '1px solid var(--border-color)' }}>
+                        <td style={{ padding: '1rem' }}>
+                          <div style={{ fontWeight: 'bold', color: '#fff' }}>{m.fullName}</div>
+                          <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{m.whatsappNumber}</div>
+                        </td>
+                        <td style={{ padding: '1rem', color: 'var(--text-muted)' }}>{m.cedula}</td>
+                        <td style={{ padding: '1rem', color: 'var(--text-muted)' }}>
+                          {new Date(m.expirationDate).toLocaleDateString()}
+                        </td>
+                        <td style={{ padding: '1rem' }}>
+                          <span style={{ 
+                            padding: '0.4rem 0.8rem', 
+                            borderRadius: '20px', 
+                            fontSize: '0.8rem', 
+                            fontWeight: 'bold', 
+                            backgroundColor: `${badgeColor}20`,
+                            color: badgeColor,
+                            border: `1px solid ${badgeColor}`
+                          }}>
+                            {badgeText}
+                          </span>
+                        </td>
+                        <td style={{ padding: '1rem', textAlign: 'right' }}>
+                          {m.diffDays <= 0 && (
+                            <button 
+                              onClick={() => router.push(`/admin/facturacion?memberId=${m.id}`)}
+                              className="btn-primary" 
+                              style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 1rem', fontSize: '0.85rem' }}
+                            >
+                              <FileText size={16} /> Crear Factura
+                            </button>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            )}
+          </div>
         </div>
 
-        {/* WhatsApp Logs Module */}
+        {/* WhatsApp Logs */}
         <div className="card">
-          <h3 style={{ marginBottom: '1rem' }}>📝 Registro de Mensajes</h3>
-          <div style={{ maxHeight: '350px', overflowY: 'auto', paddingRight: '0.5rem' }}>
+          <h3 style={{ marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>📝 Mensajes Enviados Recientemente</h3>
+          <div style={{ maxHeight: '350px', overflowY: 'auto' }}>
             {waLogs.length === 0 ? (
-              <p style={{ color: 'var(--text-muted)', textAlign: 'center', fontStyle: 'italic', marginTop: '2rem' }}>No hay mensajes enviados recientemente.</p>
+              <p style={{ color: 'var(--text-muted)', textAlign: 'center', fontStyle: 'italic', marginTop: '2rem' }}>No hay mensajes recientes.</p>
             ) : (
               <ul style={{ listStyle: 'none', padding: 0 }}>
                 {waLogs.map((log: any) => (
-                  <li key={log.id} style={{ padding: '1rem', borderBottom: '1px solid var(--border-color)' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
-                      <strong style={{ color: 'var(--primary-color)' }}>{log.member?.fullName || `ID: ${log.memberId}`}</strong>
-                      <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                        {new Date(log.sentAt).toLocaleString('es-ES')}
-                      </span>
+                  <li key={log.id} style={{ padding: '0.8rem', borderBottom: '1px solid var(--border-color)' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.3rem' }}>
+                      <strong style={{ color: 'var(--primary-color)', fontSize: '0.85rem' }}>{log.member?.fullName || 'Sistema'}</strong>
+                      <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{new Date(log.sentAt).toLocaleString()}</span>
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '80%' }}>
-                        {log.messageBody.substring(0, 50)}...
+                      <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '80%' }}>
+                        {log.messageBody?.substring(0, 60)}...
                       </span>
-                      <span style={{ 
-                        fontSize: '0.7rem', 
-                        padding: '0.2rem 0.5rem', 
-                        borderRadius: '4px', 
-                        backgroundColor: log.status === 'sent' ? 'rgba(0, 210, 138, 0.2)' : 'rgba(255, 77, 77, 0.2)',
-                        color: log.status === 'sent' ? 'var(--success)' : 'var(--danger)'
-                      }}>
+                      <span style={{ fontSize: '0.7rem', padding: '0.2rem 0.5rem', borderRadius: '4px', backgroundColor: log.status === 'sent' ? 'rgba(0,210,138,0.2)' : 'rgba(255,77,77,0.2)', color: log.status === 'sent' ? 'var(--success)' : 'var(--danger)' }}>
                         {log.status === 'sent' ? 'Enviado' : 'Falló'}
                       </span>
                     </div>
@@ -131,6 +193,7 @@ export default function Dashboard() {
             )}
           </div>
         </div>
+
       </div>
     </div>
   );
