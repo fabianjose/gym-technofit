@@ -1,0 +1,12 @@
+2026/03/19-20:10:51.153 66ac Reusing MANIFEST C:\Users\Admin\Documents\gym\backend\.wwebjs_auth\session\Default\IndexedDB\https_web.whatsapp.com_0.indexeddb.leveldb/MANIFEST-000001
+2026/03/19-20:10:51.153 66ac Recovering log #102
+2026/03/19-20:10:51.175 66ac Reusing old log C:\Users\Admin\Documents\gym\backend\.wwebjs_auth\session\Default\IndexedDB\https_web.whatsapp.com_0.indexeddb.leveldb/000102.log 
+2026/03/19-20:10:54.503 66ac Level-0 table #107: started
+2026/03/19-20:10:54.534 66ac Level-0 table #107: 1063607 bytes OK
+2026/03/19-20:10:54.535 66ac Delete type=0 #102
+2026/03/19-20:10:54.546 66ac Compacting 1@1 + 1@2 files
+2026/03/19-20:10:54.630 66ac Generated table #108@1: 38939 keys, 1639969 bytes
+2026/03/19-20:10:54.630 66ac Compacted 1@1 + 1@2 files => 1639969 bytes
+2026/03/19-20:10:54.631 66ac compacted to: files[ 0 0 1 0 0 0 0 ]
+2026/03/19-20:10:54.632 66ac Delete type=2 #104
+2026/03/19-20:10:54.632 66ac Delete type=2 #107
