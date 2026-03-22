@@ -86,7 +86,7 @@ export class CronService {
         if (member.whatsappNumber) await this.whatsappService.send(member.whatsappNumber, msg, member.id);
         
         for (const phone of owners) {
-          if (phone) await this.whatsappService.send(phone, `ALERTA: Mensualidad vencida de ${member.fullName} C.C: ${member.identificationDocument || 'N/A'}.`, 0);
+          if (phone) await this.whatsappService.send(phone, `ALERTA: Mensualidad vencida de ${member.fullName} C.C: ${member.cedula || 'N/A'}.`, 0);
         }
       }
     }

@@ -48,7 +48,7 @@ export class PdfService {
           <div class="client-info">
             <h3>Facturar a:</h3>
             <p style="margin: 5px 0; font-weight: bold; font-size: 18px;">${invoice.member?.fullName || 'Cliente'}</p>
-            <p style="margin: 5px 0;">Doc: ${invoice.member?.identificationDocument || 'N/A'}</p>
+            <p style="margin: 5px 0;">Doc: ${invoice.member?.cedula || 'N/A'}</p>
             <p style="margin: 5px 0;">Tel: ${invoice.member?.whatsappNumber || 'N/A'}</p>
           </div>
           <div class="meta-info">
