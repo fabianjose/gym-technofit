@@ -18,4 +18,8 @@ export class CreateInvoiceDto {
   @IsNumber()
   @Transform(({ value }) => Number(value))
   amountTotal: number;
+
+  @IsString()
+  @IsOptional()
+  paymentMethod?: string;
 }

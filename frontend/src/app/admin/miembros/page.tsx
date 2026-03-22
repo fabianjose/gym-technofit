@@ -10,6 +10,13 @@ export default function MiembrosPage() {
   const [showModal, setShowModal] = useState(false);
   const [activeTab, setActiveTab] = useState('personal'); // 'personal' | 'medidas'
   const [editingId, setEditingId] = useState<number | null>(null);
+
+  // Invoice on signup
+  const [emitInvoice, setEmitInvoice] = useState(false);
+  const [plans, setPlans] = useState<any[]>([]);
+  const [discounts, setDiscounts] = useState<any[]>([]);
+  const [paymentMethods, setPaymentMethods] = useState<any[]>([]);
+  const [invoiceForm, setInvoiceForm] = useState({ planId: '', discountId: '', paymentMethod: 'Efectivo', amountTotal: '' });
   
   const [form, setForm] = useState({ 
     cedula: '', 
@@ -47,7 +54,24 @@ export default function MiembrosPage() {
 
   useEffect(() => {
     fetchMembers();
+    fetchCatalogues();
   }, []);
+
+  const fetchCatalogues = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const [plansRes, discountsRes, pmRes] = await Promise.all([
+        axios.get('http://localhost:3001/api/plans'),
+        axios.get('http://localhost:3001/api/discounts'),
+        axios.get('http://localhost:3001/api/payment-methods', { headers: { Authorization: `Bearer ${token}` } }),
+      ]);
+      setPlans(plansRes.data);
+      setDiscounts(discountsRes.data.filter((d: any) => d.isActive));
+      setPaymentMethods(pmRes.data.filter((p: any) => p.isActive));
+    } catch (e) {
+      console.error('Error loading catalogues', e);
+    }
+  };
 
   const fetchMembers = async () => {
     try {
@@ -96,8 +120,27 @@ export default function MiembrosPage() {
         await axios.put(`http://localhost:3001/api/members/${editingId}`, data, { headers });
         showSuccess('Miembro actualizado exitosamente');
       } else {
-        await axios.post('http://localhost:3001/api/members', data, { headers });
-        showSuccess('Miembro agregado exitosamente');
+        const created = await axios.post('http://localhost:3001/api/members', data, { headers });
+        // Emit first invoice if requested
+        if (emitInvoice && invoiceForm.planId && invoiceForm.amountTotal) {
+          const selectedPlan = plans.find((p: any) => p.id === invoiceForm.planId);
+          const price = Number(invoiceForm.amountTotal);
+          let finalPrice = price;
+          if (invoiceForm.discountId) {
+            const disc = discounts.find((d: any) => d.id === invoiceForm.discountId);
+            if (disc) finalPrice = price * (1 - disc.percentage / 100);
+          }
+          await axios.post('http://localhost:3001/api/invoices', {
+            memberId: created.data.id,
+            planId: invoiceForm.planId,
+            discountId: invoiceForm.discountId || undefined,
+            amountTotal: Math.round(finalPrice),
+            paymentMethod: invoiceForm.paymentMethod,
+          }, { headers });
+          showSuccess('¡Miembro registrado y primera factura emitida!');
+        } else {
+          showSuccess('Miembro agregado exitosamente');
+        }
       }
 
       resetForm();
@@ -152,6 +195,8 @@ export default function MiembrosPage() {
 
   const resetForm = () => {
     setEditingId(null);
+    setEmitInvoice(false);
+    setInvoiceForm({ planId: '', discountId: '', paymentMethod: 'Efectivo', amountTotal: '' });
     setForm({ cedula: '', fullName: '', email: '', whatsappNumber: '+57', notifyTime: '07:00', birthDate: '', registrationDate: new Date().toISOString().split('T')[0], expirationDate: '' });
     setMeasurements({ peso: '', altura: '', pecho: '', brazos: '', cintura: '', piernas: '' });
     setActiveTab('personal');
@@ -282,9 +327,92 @@ export default function MiembrosPage() {
                 </div>
               )}
 
+              {/* INVOICE ON SIGNUP - only for new members */}
+              {!editingId && (
+                <div style={{ marginTop: '2rem', borderTop: '1px solid var(--border-color)', paddingTop: '1.5rem' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', cursor: 'pointer', marginBottom: '1rem' }}>
+                    <input
+                      type="checkbox"
+                      checked={emitInvoice}
+                      onChange={e => setEmitInvoice(e.target.checked)}
+                      style={{ width: '18px', height: '18px', accentColor: 'var(--primary-color)' }}
+                    />
+                    <span style={{ fontWeight: 'bold', color: 'var(--primary-color)', fontSize: '1rem' }}>
+                      💳 Emitir primera factura de ingreso
+                    </span>
+                  </label>
+
+                  {emitInvoice && (
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', backgroundColor: 'rgba(255,255,255,0.03)', padding: '1rem', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
+                      <div style={{ gridColumn: '1 / -1' }}>
+                        <label style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Plan de Suscripción *</label>
+                        <select
+                          value={invoiceForm.planId}
+                          required={emitInvoice}
+                          onChange={e => {
+                            const p = plans.find((pl: any) => pl.id === e.target.value);
+                            setInvoiceForm({ ...invoiceForm, planId: e.target.value, amountTotal: p ? p.price.toString() : '' });
+                          }}
+                          style={{ marginBottom: 0, width: '100%', padding: '0.75rem', backgroundColor: 'var(--bg-color)', borderRadius: '8px', border: '1px solid var(--border-color)', color: '#fff' }}
+                        >
+                          <option value="">— Seleccionar plan —</option>
+                          {plans.map((p: any) => (
+                            <option key={p.id} value={p.id}>{p.name} — ${Number(p.price).toLocaleString()} COP</option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div>
+                        <label style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Descuento (opcional)</label>
+                        <select
+                          value={invoiceForm.discountId}
+                          onChange={e => {
+                            const disc = discounts.find((d: any) => d.id === e.target.value);
+                            const basePrice = invoiceForm.planId ? Number(plans.find((p:any) => p.id === invoiceForm.planId)?.price || 0) : 0;
+                            const finalPrice = disc ? basePrice * (1 - disc.percentage / 100) : basePrice;
+                            setInvoiceForm({ ...invoiceForm, discountId: e.target.value, amountTotal: finalPrice ? Math.round(finalPrice).toString() : invoiceForm.amountTotal });
+                          }}
+                          style={{ marginBottom: 0, width: '100%', padding: '0.75rem', backgroundColor: 'var(--bg-color)', borderRadius: '8px', border: '1px solid var(--border-color)', color: '#fff' }}
+                        >
+                          <option value="">— Sin descuento —</option>
+                          {discounts.map((d: any) => (
+                            <option key={d.id} value={d.id}>{d.name} ({d.percentage}%)</option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div>
+                        <label style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Método de Pago *</label>
+                        <select
+                          value={invoiceForm.paymentMethod}
+                          onChange={e => setInvoiceForm({ ...invoiceForm, paymentMethod: e.target.value })}
+                          style={{ marginBottom: 0, width: '100%', padding: '0.75rem', backgroundColor: 'var(--bg-color)', borderRadius: '8px', border: '1px solid var(--border-color)', color: '#fff' }}
+                        >
+                          {paymentMethods.map((pm: any) => (
+                            <option key={pm.id} value={pm.name}>{pm.name}</option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div style={{ gridColumn: '1 / -1' }}>
+                        <label style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Total a Cobrar (COP) *</label>
+                        <input
+                          type="number"
+                          value={invoiceForm.amountTotal}
+                          onChange={e => setInvoiceForm({ ...invoiceForm, amountTotal: e.target.value })}
+                          required={emitInvoice}
+                          placeholder="Se calcula automáticamente del plan"
+                          style={{ marginBottom: 0, width: '100%', padding: '0.75rem', backgroundColor: 'var(--bg-color)', borderRadius: '8px', border: '1px solid var(--primary-color)', color: '#fff' }}
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
               <div style={{ marginTop: '1.5rem' }}>
                 <button type="submit" className="btn-primary" style={{ width: '100%', padding: '1rem', fontSize: '1rem', display: 'flex', justifyContent: 'center', gap: '0.5rem' }}>
-                  <CheckCircle size={20} /> {editingId ? 'Actualizar Miembro' : 'Completar Registro'}
+                  <CheckCircle size={20} /> {editingId ? 'Actualizar Miembro' : (emitInvoice ? '✅ Registrar y Facturar' : 'Completar Registro')}
                 </button>
               </div>
             </form>

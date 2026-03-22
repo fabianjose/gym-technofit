@@ -28,6 +28,7 @@ import { Plan } from './plans/entities/plan.entity';
 import { Discount } from './discounts/entities/discount.entity';
 import { Invoice } from './invoices/entities/invoice.entity';
 import { GymConfig } from './gym-config/entities/gym-config.entity';
+import { PaymentMethod } from './payment-methods/entities/payment-method.entity';
 
 import { PlansModule } from './plans/plans.module';
 import { DiscountsModule } from './discounts/discounts.module';
@@ -35,6 +36,7 @@ import { InvoicesModule } from './invoices/invoices.module';
 import { GymConfigModule } from './gym-config/gym-config.module';
 import { CronModule } from './cron/cron.module';
 import { PdfModule } from './pdf/pdf.module';
+import { PaymentMethodsModule } from './payment-methods/payment-methods.module';
 
 @Module({
   imports: [
@@ -55,7 +57,7 @@ import { PdfModule } from './pdf/pdf.module';
         entities: [
           Admin, Member, Machine, RoutineTemplate, RoutineDay, RoutineDayExercise,
           CalendarEntry, CalendarEntryExercise, WhatsappLog, Category,
-          GymConfig, Plan, Discount, Invoice
+          GymConfig, Plan, Discount, Invoice, PaymentMethod
         ],
         synchronize: true,
         timezone: 'Z',
@@ -76,7 +78,8 @@ import { PdfModule } from './pdf/pdf.module';
     DiscountsModule,
     InvoicesModule,
     GymConfigModule,
-    CronModule
+    CronModule,
+    PaymentMethodsModule
   ],
   controllers: [AppController],
   providers: [AppService],

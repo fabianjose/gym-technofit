@@ -85,10 +85,10 @@ export class MembersService {
     console.log('Incoming create date:', data.registrationDate);
     if (data.registrationDate) {
       const regStr = this.toDateStr(data.registrationDate) ?? '';
-      const expStr = this.addOneMonth(regStr);
-      // Pasar strings directamente: el driver MySQL no aplica conversión de zona horaria a strings
+      // expirationDate starts equal to registrationDate (no grace month)
+      // The first Invoice will extend it by 1 month
       (data as any).registrationDate = regStr;
-      (data as any).expirationDate   = expStr;
+      (data as any).expirationDate   = regStr;
     }
     if (data.birthDate) {
       (data as any).birthDate = this.toDateStr(data.birthDate);

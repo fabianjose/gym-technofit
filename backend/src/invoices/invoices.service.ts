@@ -48,6 +48,7 @@ export class InvoicesService {
       invoiceNumber: nextInvoiceNumber,
       issueDate: new Date(),
       status: 'PAID',
+      paymentMethod: createInvoiceDto.paymentMethod || 'Efectivo',
     });
 
     const savedInvoice = await this.invoiceRepository.save(invoice);

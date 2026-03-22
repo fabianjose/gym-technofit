@@ -18,6 +18,8 @@ function FacturacionContent() {
   
   const [selectedPlanId, setSelectedPlanId] = useState('');
   const [selectedDiscountId, setSelectedDiscountId] = useState('');
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState('Efectivo');
+  const [paymentMethods, setPaymentMethods] = useState<any[]>([]);
 
   const [invoices, setInvoices] = useState([]);
   const [successMsg, setSuccessMsg] = useState('');
@@ -47,18 +49,20 @@ function FacturacionContent() {
     if (!token) return;
     try {
       const headers = { Authorization: `Bearer ${token}` };
-      const [membersRes, plansRes, discountsRes, invoicesRes, configRes] = await Promise.all([
+      const [membersRes, plansRes, discountsRes, invoicesRes, configRes, pmRes] = await Promise.all([
         axios.get('http://localhost:3001/api/members', { headers }),
         axios.get('http://localhost:3001/api/plans', { headers }),
         axios.get('http://localhost:3001/api/discounts/active', { headers }),
         axios.get('http://localhost:3001/api/invoices', { headers }),
-        axios.get('http://localhost:3001/api/gym-config', { headers })
+        axios.get('http://localhost:3001/api/gym-config', { headers }),
+        axios.get('http://localhost:3001/api/payment-methods', { headers }),
       ]);
       setMembers(membersRes.data);
       setPlans(plansRes.data);
       setDiscounts(discountsRes.data);
       setInvoices(invoicesRes.data);
       setGymConfig(configRes.data);
+      setPaymentMethods(pmRes.data.filter((p: any) => p.isActive));
     } catch (e) {
       console.error(e);
     }
@@ -98,7 +102,8 @@ function FacturacionContent() {
         memberId: selectedMember.id,
         planId: selectedPlanId,
         discountId: selectedDiscountId || undefined,
-        amountTotal: calculateTotal()
+        amountTotal: calculateTotal(),
+        paymentMethod: selectedPaymentMethod,
       }, { headers: { Authorization: `Bearer ${token}` } });
       
       setSuccessMsg('✅ Factura generada y membresía renovada exitosamente.');
@@ -107,6 +112,7 @@ function FacturacionContent() {
       setSearchQuery('');
       setSelectedPlanId('');
       setSelectedDiscountId('');
+      setSelectedPaymentMethod('Efectivo');
       fetchData();
     } catch (e) {
       console.error(e);
@@ -261,6 +267,7 @@ function FacturacionContent() {
               <th style={thStyle}>Vencimiento Actual</th>
               <th style={thStyle}>Plan Seleccionado</th>
               <th style={thStyle}>Descuento</th>
+              <th style={thStyle}>Método de Pago</th>
               <th style={thStyle}>Precio Base</th>
               <th style={thStyle}>Total a Cobrar</th>
             </tr>
@@ -305,13 +312,24 @@ function FacturacionContent() {
                 <td style={tdStyle}>
                   {selectedPlan ? `$${Number(selectedPlan.price).toLocaleString()} COP` : '—'}
                 </td>
+                <td style={tdStyle}>
+                  <select
+                    value={selectedPaymentMethod}
+                    onChange={e => setSelectedPaymentMethod(e.target.value)}
+                    style={{ padding: '0.5rem', backgroundColor: 'var(--panel-bg)', border: '1px solid var(--border-color)', borderRadius: '6px', color: '#fff', width: '100%' }}
+                  >
+                    {paymentMethods.map((pm: any) => (
+                      <option key={pm.id} value={pm.name}>{pm.name}</option>
+                    ))}
+                  </select>
+                </td>
                 <td style={{ ...tdStyle, fontWeight: 'bold', color: 'var(--primary-color)', fontSize: '1.1rem' }}>
                   {selectedPlan ? `$${calculateTotal().toLocaleString()} COP` : '—'}
                 </td>
               </tr>
             ) : (
               <tr>
-                <td colSpan={8} style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)', fontStyle: 'italic' }}>
+                <td colSpan={9} style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)', fontStyle: 'italic' }}>
                   Busca y selecciona un cliente para crear la factura
                 </td>
               </tr>

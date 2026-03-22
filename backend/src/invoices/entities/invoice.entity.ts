@@ -41,6 +41,9 @@ export class Invoice {
   @Column({ type: 'varchar', length: 20, default: 'PAID' })
   status: string;
 
+  @Column({ name: 'payment_method', nullable: true, default: 'Efectivo' })
+  paymentMethod: string;
+
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 
