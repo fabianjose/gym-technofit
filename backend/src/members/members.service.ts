@@ -130,6 +130,9 @@ export class MembersService {
   async remove(id: number): Promise<void> {
     const member = await this.findOne(id);
 
+    // Preserve invoice history: keep invoices but remove member reference
+    await this.membersRepository.query(`UPDATE invoices SET member_id = NULL WHERE member_id = ?`, [id]);
+    // Clean related records
     await this.membersRepository.query(`DELETE FROM whatsapp_logs WHERE member_id = ?`, [id]);
     await this.membersRepository.query(`DELETE FROM calendar_entry_exercises WHERE calendar_entry_id IN (SELECT id FROM calendar_entries WHERE member_id = ?)`, [id]);
     await this.membersRepository.query(`DELETE FROM calendar_entries WHERE member_id = ?`, [id]);

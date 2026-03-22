@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
-import { Home, Users, Dumbbell, LogOut, Tag, CreditCard, FileText, Settings, Smartphone, UploadCloud, MessageSquare, Wallet } from 'lucide-react';
+import { Home, Users, Dumbbell, LogOut, Tag, CreditCard, FileText, Settings, Smartphone, UploadCloud, MessageSquare, Wallet, BarChart2 } from 'lucide-react';
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -40,6 +40,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           <Link href="/admin/planes" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.75rem', borderRadius: '8px', backgroundColor: pathname.includes('planes') ? 'var(--primary-color)' : 'transparent', color: pathname.includes('planes') ? '#fff' : 'inherit' }}><CreditCard size={20} /> Suscripciones</Link>
           <Link href="/admin/metodos-pago" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.75rem', borderRadius: '8px', backgroundColor: pathname.includes('metodos-pago') ? 'var(--primary-color)' : 'transparent', color: pathname.includes('metodos-pago') ? '#fff' : 'inherit' }}><Wallet size={20} /> Métodos de Pago</Link>
           <Link href="/admin/facturacion" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.75rem', borderRadius: '8px', backgroundColor: pathname.includes('facturacion') ? 'var(--primary-color)' : 'transparent', color: pathname.includes('facturacion') ? '#fff' : 'inherit' }}><FileText size={20} /> Facturación</Link>
+          <Link href="/admin/estadisticas" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.75rem', borderRadius: '8px', backgroundColor: pathname.includes('estadisticas') ? 'var(--primary-color)' : 'transparent', color: pathname.includes('estadisticas') ? '#fff' : 'inherit' }}><BarChart2 size={20} /> Estadísticas</Link>
           <Link href="/admin/configuracion" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.75rem', borderRadius: '8px', backgroundColor: pathname.includes('configuracion') ? 'var(--primary-color)' : 'transparent', color: pathname.includes('configuracion') ? '#fff' : 'inherit' }}><Settings size={20} /> Configuración</Link>
           <Link href="/admin/whatsapp" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.75rem', borderRadius: '8px', backgroundColor: pathname.includes('whatsapp') ? 'var(--primary-color)' : 'transparent', color: pathname.includes('whatsapp') ? '#fff' : 'inherit' }}><Smartphone size={20} /> WhatsApp</Link>
           <Link href="/admin/carga-masiva" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.75rem', borderRadius: '8px', backgroundColor: pathname.includes('carga-masiva') ? 'var(--primary-color)' : 'transparent', color: pathname.includes('carga-masiva') ? '#fff' : 'inherit' }}><UploadCloud size={20} /> Carga CSV</Link>

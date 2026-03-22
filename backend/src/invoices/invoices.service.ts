@@ -42,6 +42,7 @@ export class InvoicesService {
 
     const invoice = this.invoiceRepository.create({
       memberId,
+      memberName: member.fullName, // snapshot for history
       planId,
       discountId: discountId || null,
       amountTotal: Number(amountTotal),
@@ -132,5 +133,52 @@ export class InvoicesService {
       }
     }
     return await this.invoiceRepository.remove(invoice);
+  }
+
+  async getStats(opts: { from?: string; to?: string } = {}) {
+    const qb = this.invoiceRepository.createQueryBuilder('inv')
+      .where("inv.status = 'PAID'");
+
+    if (opts.from) qb.andWhere('inv.issue_date >= :from', { from: opts.from });
+    if (opts.to)   qb.andWhere('inv.issue_date <= :to',   { to: opts.to });
+
+    const invoices = await qb.getMany();
+
+    const totalRevenue = invoices.reduce((sum, i) => sum + Number(i.amountTotal), 0);
+    const totalInvoices = invoices.length;
+
+    // Group by payment method
+    const byMethod: Record<string, { count: number; total: number }> = {};
+    for (const inv of invoices) {
+      const key = inv.paymentMethod || 'Sin especificar';
+      if (!byMethod[key]) byMethod[key] = { count: 0, total: 0 };
+      byMethod[key].count++;
+      byMethod[key].total += Number(inv.amountTotal);
+    }
+
+    // Group by member (using memberName snapshot or member relation)
+    const byMember: Record<string, { count: number; total: number }> = {};
+    for (const inv of invoices) {
+      const key = inv.memberName || 'Cliente eliminado';
+      if (!byMember[key]) byMember[key] = { count: 0, total: 0 };
+      byMember[key].count++;
+      byMember[key].total += Number(inv.amountTotal);
+    }
+
+    // Monthly revenue (last 6 months)
+    const monthly: Record<string, number> = {};
+    for (const inv of invoices) {
+      const d = new Date(inv.issueDate);
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+      monthly[key] = (monthly[key] || 0) + Number(inv.amountTotal);
+    }
+
+    return {
+      totalRevenue,
+      totalInvoices,
+      byMethod: Object.entries(byMethod).map(([name, data]) => ({ name, ...data })).sort((a, b) => b.total - a.total),
+      byMember: Object.entries(byMember).map(([name, data]) => ({ name, ...data })).sort((a, b) => b.total - a.total).slice(0, 10),
+      monthly: Object.entries(monthly).sort(([a], [b]) => a.localeCompare(b)).map(([month, total]) => ({ month, total })),
+    };
   }
 }

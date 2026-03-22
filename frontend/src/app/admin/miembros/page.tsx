@@ -123,18 +123,11 @@ export default function MiembrosPage() {
         const created = await axios.post('http://localhost:3001/api/members', data, { headers });
         // Emit first invoice if requested
         if (emitInvoice && invoiceForm.planId && invoiceForm.amountTotal) {
-          const selectedPlan = plans.find((p: any) => p.id === invoiceForm.planId);
-          const price = Number(invoiceForm.amountTotal);
-          let finalPrice = price;
-          if (invoiceForm.discountId) {
-            const disc = discounts.find((d: any) => d.id === invoiceForm.discountId);
-            if (disc) finalPrice = price * (1 - disc.percentage / 100);
-          }
           await axios.post('http://localhost:3001/api/invoices', {
             memberId: created.data.id,
             planId: invoiceForm.planId,
             discountId: invoiceForm.discountId || undefined,
-            amountTotal: Math.round(finalPrice),
+            amountTotal: Math.round(Number(invoiceForm.amountTotal)),
             paymentMethod: invoiceForm.paymentMethod,
           }, { headers });
           showSuccess('¡Miembro registrado y primera factura emitida!');

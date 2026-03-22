@@ -11,12 +11,16 @@ export class Invoice {
   @Column({ name: 'invoice_number', type: 'int', default: 1000 })
   invoiceNumber: number;
 
-  @ManyToOne(() => Member)
+  @ManyToOne(() => Member, { nullable: true, onDelete: 'SET NULL' })
   @JoinColumn({ name: 'member_id' })
   member: Member;
 
-  @Column({ name: 'member_id' })
-  memberId: number;
+  @Column({ name: 'member_id', nullable: true })
+  memberId: number | null;
+
+  // Snapshot del nombre en el momento de la factura para preservar historial
+  @Column({ name: 'member_name', nullable: true })
+  memberName: string;
 
   @ManyToOne(() => Plan)
   @JoinColumn({ name: 'plan_id' })

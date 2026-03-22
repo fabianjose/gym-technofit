@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Param, UseGuards, Delete, Patch } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, UseGuards, Delete, Patch, Query } from '@nestjs/common';
 import { InvoicesService } from './invoices.service';
 import { CreateInvoiceDto } from './dto/create-invoice.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -21,6 +21,11 @@ export class InvoicesController {
   @Get()
   findAll() {
     return this.invoicesService.findAll();
+  }
+
+  @Get('stats')
+  getStats(@Query('from') from?: string, @Query('to') to?: string) {
+    return this.invoicesService.getStats({ from, to });
   }
 
   @Get(':id')
