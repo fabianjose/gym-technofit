@@ -34,7 +34,7 @@ export class PdfService {
         <div class="header">
           <div>
             ${gymConfig?.logoBase64 ? `<img src="${gymConfig.logoBase64}" class="logo" alt="Gym Logo" />` : ''}
-            <div class="title">RECIBO DE CAJA</div>
+            <div class="title"></div>
           </div>
           <div class="gym-details">
             <h1 class="gym-name">${gymConfig?.gymName || 'GymFlow'}</h1>
@@ -105,7 +105,7 @@ export class PdfService {
       headless: true,
       args: ['--no-sandbox', '--disable-setuid-sandbox']
     });
-    
+
     try {
       const page = await browser.newPage();
       await page.setContent(htmlContent, { waitUntil: 'load' });

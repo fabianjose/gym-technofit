@@ -25,22 +25,36 @@ export class WhatsappService implements OnModuleInit {
   ) {}
 
   onModuleInit() {
-    this.initializeClient();
+    this.logger.log('Iniciando módulo de WhatsApp (en segundo plano)...');
+    // Usar un pequeño delay para asegurar que no bloquee el arranque principal
+    setTimeout(() => {
+      this.initializeClient();
+    }, 5000);
   }
 
   private initializeClient() {
+    this.logger.log('Inicializando cliente de WhatsApp Web...');
     try {
       this.client = new Client({
         authStrategy: new LocalAuth({
           clientId: 'gymflow-admin',
           dataPath: './.wwebjs_auth'
         }),
-        puppeteer: { args: ['--no-sandbox', '--disable-setuid-sandbox'] }
+        puppeteer: { 
+          args: ['--no-sandbox', '--disable-setuid-sandbox'],
+          handleSIGINT: false,
+          handleSIGTERM: false,
+          handleSIGHUP: false
+        }
       });
 
       this.client.on('qr', async (qr) => {
         this.logger.log('WhatsApp: Generando código QR...');
-        this.qrCodeDataUrl = await qrcode.toDataURL(qr);
+        try {
+          this.qrCodeDataUrl = await qrcode.toDataURL(qr);
+        } catch (err) {
+          this.logger.error('Error generando QR DataURL', err);
+        }
         this.isConnected = false;
       });
 
@@ -50,21 +64,24 @@ export class WhatsappService implements OnModuleInit {
         this.qrCodeDataUrl = '';
       });
 
-      this.client.on('auth_failure', () => {
-        this.logger.error('Fallo en autenticación de WhatsApp');
+      this.client.on('auth_failure', (msg) => {
+        this.logger.error('Fallo en autenticación de WhatsApp: ' + msg);
         this.isConnected = false;
       });
 
-      this.client.on('disconnected', () => {
-        this.logger.log('WhatsApp Web fue desconectado. Limpiando y esperando QR...');
+      this.client.on('disconnected', (reason) => {
+        this.logger.log('WhatsApp Web fue desconectado: ' + reason);
         this.isConnected = false;
         this.qrCodeDataUrl = '';
-        this.initializeClient(); // Re-instantiate
+        this.logger.log('Intentando re-inicializar en 30 segundos...');
+        setTimeout(() => this.initializeClient(), 30000);
       });
 
-      this.client.initialize();
+      this.client.initialize().catch(err => {
+        this.logger.error('Error en client.initialize():', err);
+      });
     } catch (e) {
-      this.logger.error('Error inicializando WhatsApp', e);
+      this.logger.error('Error fatal inicializando WhatsApp', e);
     }
   }
 

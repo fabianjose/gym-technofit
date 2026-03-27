@@ -399,7 +399,7 @@ function FacturacionContent() {
                         <span style={{ backgroundColor: 'var(--success)', color: '#000', padding: '0.2rem 0.5rem', borderRadius: '4px', fontSize: '0.8rem', fontWeight: 'bold' }}>Pagada</span>
                       )}
                     </td>
-                    <td style={tdStyle}><span style={{ fontWeight: 'bold', textDecoration: inv.status === 'ANNULLED' ? 'line-through' : 'none' }}>{inv.member?.fullName || '—'}</span></td>
+                    <td style={tdStyle}><span style={{ fontWeight: 'bold', textDecoration: inv.status === 'ANNULLED' ? 'line-through' : 'none' }}>{inv.member?.fullName || inv.memberName || <span style={{ color: 'var(--text-muted)', fontStyle: 'italic' }}>Cliente eliminado</span>}</span></td>
                     <td style={tdStyle}>{inv.plan?.name || '—'}</td>
                     <td style={tdStyle}>{inv.discount ? `${inv.discount.name} (${inv.discount.percentage}%)` : '—'}</td>
                     <td style={{ ...tdStyle, fontWeight: 'bold', color: inv.status === 'ANNULLED' ? 'var(--text-muted)' : 'var(--primary-color)' }}>${Number(inv.amountTotal).toLocaleString()} COP</td>

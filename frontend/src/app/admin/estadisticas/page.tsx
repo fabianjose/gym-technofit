@@ -47,21 +47,26 @@ export default function EstadisticasPage() {
       </h2>
 
       {/* Filtros */}
-      <div style={{ ...cardStyle, display: 'flex', gap: '1rem', alignItems: 'flex-end', flexWrap: 'wrap', marginBottom: '2rem' }}>
-        <div>
-          <label style={{ fontSize: '0.82rem', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>Desde</label>
-          <input type="date" value={from} onChange={e => setFrom(e.target.value)} style={{ padding: '0.6rem 0.9rem', backgroundColor: 'var(--bg-color)', border: '1px solid var(--border-color)', borderRadius: '8px', color: '#fff' }} />
+      <div style={{ ...cardStyle, marginBottom: '2rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1.5rem', background: 'linear-gradient(135deg, var(--panel-bg) 0%, rgba(255,255,255,0.05) 100%)' }}>
+        <div style={{ display: 'flex', gap: '1.5rem', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+            <span style={{ fontSize: '0.75rem', fontWeight: 'bold', color: 'var(--primary-color)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Rango de Inicio</span>
+            <input type="date" value={from} onChange={e => setFrom(e.target.value)} style={{ padding: '0.7rem 1rem', backgroundColor: 'var(--bg-color)', border: '1px solid var(--border-color)', borderRadius: '10px', color: '#fff', fontSize: '0.9rem', outline: 'none' }} />
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+            <span style={{ fontSize: '0.75rem', fontWeight: 'bold', color: 'var(--primary-color)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Rango de Fin</span>
+            <input type="date" value={to} onChange={e => setTo(e.target.value)} style={{ padding: '0.7rem 1rem', backgroundColor: 'var(--bg-color)', border: '1px solid var(--border-color)', borderRadius: '10px', color: '#fff', fontSize: '0.9rem', outline: 'none' }} />
+          </div>
         </div>
-        <div>
-          <label style={{ fontSize: '0.82rem', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>Hasta</label>
-          <input type="date" value={to} onChange={e => setTo(e.target.value)} style={{ padding: '0.6rem 0.9rem', backgroundColor: 'var(--bg-color)', border: '1px solid var(--border-color)', borderRadius: '8px', color: '#fff' }} />
+        
+        <div style={{ display: 'flex', gap: '1rem' }}>
+          <button onClick={() => { setFrom(''); setTo(''); setTimeout(fetchStats, 50); }} style={{ padding: '0.7rem 1.2rem', background: 'transparent', border: '1px solid var(--border-color)', borderRadius: '10px', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '0.9rem', fontWeight: '500', transition: 'all 0.2s' }}>
+            Limpiar
+          </button>
+          <button onClick={fetchStats} className="btn-primary" style={{ padding: '0.7rem 2rem', display: 'flex', gap: '0.6rem', alignItems: 'center', borderRadius: '10px', fontSize: '0.9rem', boxShadow: '0 4px 15px rgba(var(--primary-rgb), 0.3)' }} disabled={loading}>
+            {loading ? 'Consultando...' : <><TrendingUp size={18} /> Filtrar Datos</>}
+          </button>
         </div>
-        <button onClick={fetchStats} className="btn-primary" style={{ padding: '0.6rem 1.4rem', display: 'flex', gap: '0.5rem', alignItems: 'center' }} disabled={loading}>
-          <TrendingUp size={16} /> {loading ? 'Cargando...' : 'Aplicar Filtro'}
-        </button>
-        <button onClick={() => { setFrom(''); setTo(''); setTimeout(fetchStats, 50); }} style={{ padding: '0.6rem 1rem', background: 'none', border: '1px solid var(--border-color)', borderRadius: '8px', color: 'var(--text-muted)', cursor: 'pointer' }}>
-          Ver Todo
-        </button>
       </div>
 
       {stats && (
