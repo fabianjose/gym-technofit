@@ -67,26 +67,26 @@ export class InvoicesService {
    if (member.whatsappNumber) {
   // Usamos un pequeño delay para que el servidor respire entre generar el PDF y enviarlo
   setTimeout(async () => {
-    try {
-      const config = await this.gymConfigService.getGlobalConfig();
-      const fullInvoice = await this.findOne(savedInvoice.id);
-      
-      // Generamos el PDF
-      const pdfBuffer = await this.pdfService.generateInvoicePdf(fullInvoice, config);
-      
-      // Esperamos 2 segundos adicionales antes de disparar el envío por WhatsApp
-      await new Promise(resolve => setTimeout(resolve, 2000));
+  try {
+    const config = await this.gymConfigService.getGlobalConfig();
+    const fullInvoice = await this.findOne(savedInvoice.id);
+    
+    // Esto ahora será instantáneo y no consumirá CPU
+    const pdfBuffer = await this.pdfService.generateInvoicePdf(fullInvoice, config);
+    
+    // Le damos 1 segundo al bot de WhatsApp para estar "tranquilo"
+    await new Promise(r => setTimeout(r, 1000));
 
-      await this.whatsappService.sendPdf(
-        member.whatsappNumber, 
-        pdfBuffer, 
-        `Fac-${fullInvoice.invoiceNumber}.pdf`, 
-        `✅ *Pago Confirmado*...`
-      );
-    } catch (e) {
-      console.error('Error en el proceso de envío:', e);
-    }
-  }, 1000); 
+    await this.whatsappService.sendPdf(
+      member.whatsappNumber, 
+      pdfBuffer, 
+      `Factura-${fullInvoice.invoiceNumber}.pdf`, 
+      `Hola ${member.fullName}, adjuntamos tu recibo. 💪`
+    );
+  } catch (e) {
+    console.error('Fallo el envío asíncrono:', e);
+  }
+}, 2000); // Esperamos 2 segundos después de guardar en DB
 }
 
     return savedInvoice;
