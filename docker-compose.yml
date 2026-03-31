@@ -35,6 +35,7 @@ services:
           cpus: '0.70'
     volumes:
       - ./backend/uploads:/app/uploads 
+      - ./backend/.wwebjs_auth:/app/.wwebjs_auth
     expose:
       - "3001"
 
