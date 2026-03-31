@@ -21,12 +21,11 @@ jobs:
           key: ${{ secrets.AWS_SSH_KEY }}
           command_timeout: 30m
           script: |
-            # 1. Entrar a la carpeta del proyecto en el servidor
-            # REEMPLAZA '/ruta/a/tu/proyecto' con la ruta real en tu AWS
             cd /home/ubuntu/gym-technofit
-            
-            # 2. Descargar los últimos cambios de GitHub
             git pull origin main
             
-            # 3. Reconstruir y levantar los contenedores de Docker
+            # 1. Apagamos y limpiamos los contenedores actuales para evitar el bug de ContainerConfig
+            docker-compose down
+            
+            # 2. Reconstruimos y levantamos en limpio
             docker-compose up -d --build
