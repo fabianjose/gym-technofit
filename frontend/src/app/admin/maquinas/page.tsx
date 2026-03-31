@@ -16,7 +16,7 @@ export default function MaquinasPage() {
   }, []);
 
   const fetchCategories = async () => {
-    const res = await axios.get('http://localhost:3001/api/categories');
+    const res = await axios.get('/api/categories');
     setCategories(res.data);
     if (res.data.length > 0) {
       setForm((prev: any) => ({ ...prev, category: res.data[0].name }));
@@ -24,16 +24,16 @@ export default function MaquinasPage() {
   };
 
   const fetchMachines = async () => {
-    const res = await axios.get('http://localhost:3001/api/machines');
+    const res = await axios.get('/api/machines');
     setMachines(res.data);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (form.id) {
-      await axios.put(`http://localhost:3001/api/machines/${form.id}`, form, { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } });
+      await axios.put(`/api/machines/${form.id}`, form, { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } });
     } else {
-      await axios.post('http://localhost:3001/api/machines', form, { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } });
+      await axios.post('/api/machines', form, { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } });
     }
     setForm({ id: undefined, name: '', description: '', category: categories.length > 0 ? (categories[0] as any).name : 'General', showInPublic: true });
     fetchMachines();
@@ -44,7 +44,7 @@ export default function MaquinasPage() {
     try {
       const formData = new FormData();
       formData.append('file', file);
-      await axios.post(`http://localhost:3001/api/machines/${id}/${type}`, formData, {
+      await axios.post(`/api/machines/${id}/${type}`, formData, {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}`, 'Content-Type': 'multipart/form-data' }
       });
       await fetchMachines();
@@ -65,9 +65,9 @@ export default function MaquinasPage() {
           {machines.map((m: any) => (
             <div key={m.id} className="card" style={{ display: 'flex', flexDirection: 'row', gap: '1.5rem', alignItems: 'center', padding: '1.2rem', backgroundColor: 'var(--bg-color)', borderLeft: `4px solid ${m.showInPublic ? 'var(--primary-color)' : 'var(--text-muted)'}` }}>
               {m.photoUrl ? (
-                <img src={`http://localhost:3001${m.photoUrl}`} alt={m.name} style={{ width: '80px', height: '80px', objectFit: 'cover', borderRadius: '8px', border: '1px solid var(--border-color)' }} />
+                <img src={`${m.photoUrl}`} alt={m.name} style={{ width: '80px', height: '80px', objectFit: 'cover', borderRadius: '8px', border: '1px solid var(--border-color)' }} />
               ) : m.videoUrl ? (
-                <video src={`http://localhost:3001${m.videoUrl}`} style={{ width: '80px', height: '80px', objectFit: 'cover', borderRadius: '8px', border: '1px solid var(--border-color)' }} muted loop playsInline autoPlay />
+                <video src={`${m.videoUrl}`} style={{ width: '80px', height: '80px', objectFit: 'cover', borderRadius: '8px', border: '1px solid var(--border-color)' }} muted loop playsInline autoPlay />
               ) : (
                 <div style={{ width: '80px', height: '80px', backgroundColor: 'var(--panel-bg)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)', border: '1px dashed var(--border-color)' }}>
                   <ImageIcon size={24} />

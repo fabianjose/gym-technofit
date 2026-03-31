@@ -21,7 +21,7 @@ export default function SuscripcionesPage() {
 
   const fetchPlans = async () => {
     try {
-      const res = await axios.get('http://localhost:3001/api/plans');
+      const res = await axios.get('/api/plans');
       setPlans(res.data);
     } catch (e) {
       console.error(e);
@@ -30,7 +30,7 @@ export default function SuscripcionesPage() {
 
   const fetchDiscounts = async () => {
     try {
-      const res = await axios.get('http://localhost:3001/api/discounts');
+      const res = await axios.get('/api/discounts');
       setDiscounts(res.data);
     } catch (e) {
       console.error(e);
@@ -47,9 +47,9 @@ export default function SuscripcionesPage() {
       durationDays: 10000
     };
     if (planForm.id) {
-      await axios.patch(`http://localhost:3001/api/plans/${planForm.id}`, payload, { headers: { Authorization: `Bearer ${token}` } });
+      await axios.patch(`/api/plans/${planForm.id}`, payload, { headers: { Authorization: `Bearer ${token}` } });
     } else {
-      await axios.post('http://localhost:3001/api/plans', payload, { headers: { Authorization: `Bearer ${token}` } });
+      await axios.post('/api/plans', payload, { headers: { Authorization: `Bearer ${token}` } });
     }
     setPlanForm({ id: null, name: '', price: '', durationDays: 10000 });
     fetchPlans();
@@ -58,7 +58,7 @@ export default function SuscripcionesPage() {
   const handlePlanDelete = async (id: string) => {
     if (confirm('¿Seguro que deseas eliminar este plan?')) {
       const token = localStorage.getItem('token');
-      await axios.delete(`http://localhost:3001/api/plans/${id}`, { headers: { Authorization: `Bearer ${token}` } });
+      await axios.delete(`/api/plans/${id}`, { headers: { Authorization: `Bearer ${token}` } });
       fetchPlans();
     }
   };
@@ -74,9 +74,9 @@ export default function SuscripcionesPage() {
     };
     try {
       if (descForm.id) {
-        await axios.patch(`http://localhost:3001/api/discounts/${descForm.id}`, payload, { headers: { Authorization: `Bearer ${token}` } });
+        await axios.patch(`/api/discounts/${descForm.id}`, payload, { headers: { Authorization: `Bearer ${token}` } });
       } else {
-        await axios.post('http://localhost:3001/api/discounts', payload, { headers: { Authorization: `Bearer ${token}` } });
+        await axios.post('/api/discounts', payload, { headers: { Authorization: `Bearer ${token}` } });
       }
       setDescForm({ id: null, name: '', percentage: '', isActive: true });
       fetchDiscounts();
@@ -88,14 +88,14 @@ export default function SuscripcionesPage() {
 
   const handleToggleDesc = async (discount: any) => {
     const token = localStorage.getItem('token');
-    await axios.patch(`http://localhost:3001/api/discounts/${discount.id}`, { isActive: !discount.isActive }, { headers: { Authorization: `Bearer ${token}` } });
+    await axios.patch(`/api/discounts/${discount.id}`, { isActive: !discount.isActive }, { headers: { Authorization: `Bearer ${token}` } });
     fetchDiscounts();
   };
 
   const handleDescDelete = async (id: string) => {
     if (confirm('¿Seguro que deseas eliminar este descuento?')) {
       const token = localStorage.getItem('token');
-      await axios.delete(`http://localhost:3001/api/discounts/${id}`, { headers: { Authorization: `Bearer ${token}` } });
+      await axios.delete(`/api/discounts/${id}`, { headers: { Authorization: `Bearer ${token}` } });
       fetchDiscounts();
     }
   };

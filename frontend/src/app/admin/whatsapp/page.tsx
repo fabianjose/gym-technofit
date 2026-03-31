@@ -17,8 +17,8 @@ export default function WhatsAppPage() {
     try {
       const headers = { Authorization: `Bearer ${localStorage.getItem('token')}` };
       const [statusRes, logsRes] = await Promise.all([
-        axios.get('http://localhost:3001/api/whatsapp/status', { headers }),
-        axios.get('http://localhost:3001/api/whatsapp/logs', { headers })
+        axios.get('/api/whatsapp/status', { headers }),
+        axios.get('/api/whatsapp/logs', { headers })
       ]);
       setWaStatus(statusRes.data);
       setWaLogs(logsRes.data);
@@ -60,7 +60,7 @@ export default function WhatsAppPage() {
                 if (confirm('¿Seguro de desconectar WhatsApp?')) {
                   setWaStatus({ connected: false, qr: '' });
                   try {
-                    await axios.post('http://localhost:3001/api/whatsapp/logout', {}, { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } });
+                    await axios.post('/api/whatsapp/logout', {}, { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } });
                   } catch (e) {}
                 }
               }}

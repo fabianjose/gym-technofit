@@ -19,7 +19,7 @@ export default function EstadisticasPage() {
       const params: any = {};
       if (from) params.from = from;
       if (to)   params.to = to;
-      const res = await axios.get('http://localhost:3001/api/invoices/stats', {
+      const res = await axios.get('/api/invoices/stats', {
         headers: { Authorization: `Bearer ${token}` },
         params
       });

@@ -12,7 +12,7 @@ export default function EjerciciosPage() {
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
-    axios.get('http://localhost:3001/api/public/machines').then(res => {
+    axios.get('/api/public/machines').then(res => {
       // Filter only public ones
       setMachines(res.data.filter((m: any) => m.showInPublic !== false));
     });
@@ -35,7 +35,7 @@ export default function EjerciciosPage() {
               <span style={{ fontSize: '0.75rem', backgroundColor: 'var(--bg-color)', padding: '0.2rem 0.5rem', borderRadius: '4px', border: '1px solid var(--border-color)' }}>{m.category || 'General'}</span>
             </div>
             {m.photoUrl ? (
-              <img src={`http://localhost:3001${m.photoUrl}`} alt={m.name} style={{ width: '100%', height: '140px', objectFit: 'cover', borderRadius: '8px', marginBottom: '0.5rem' }} />
+              <img src={`${m.photoUrl}`} alt={m.name} style={{ width: '100%', height: '140px', objectFit: 'cover', borderRadius: '8px', marginBottom: '0.5rem' }} />
             ) : (
               <div style={{ width: '100%', height: '140px', backgroundColor: '#2a2a3e', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '0.5rem', fontSize: '0.8rem' }}>Sin foto</div>
             )}
@@ -79,7 +79,7 @@ export default function EjerciciosPage() {
           
           <video 
             ref={videoRef}
-            src={`http://localhost:3001${selectedVideo}`} 
+            src={`${selectedVideo}`} 
             controls 
             autoPlay 
             style={{ maxWidth: '90%', maxHeight: '80vh', borderRadius: '12px', border: '2px solid var(--primary-color)' }}

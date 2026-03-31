@@ -27,7 +27,7 @@ export default function GymConfigPage() {
   const fetchConfig = async () => {
     try {
       const token = localStorage.getItem('token');
-      const res = await axios.get('http://localhost:3001/api/gym-config', { headers: { Authorization: `Bearer ${token}` } });
+      const res = await axios.get('/api/gym-config', { headers: { Authorization: `Bearer ${token}` } });
       setPhones(res.data.ownerPhones || []);
       setEmails(res.data.ownerEmails || []);
       setGymName(res.data.gymName || '');
@@ -49,7 +49,7 @@ export default function GymConfigPage() {
     e.preventDefault();
     try {
       const token = localStorage.getItem('token');
-      await axios.patch('http://localhost:3001/api/gym-config', { 
+      await axios.patch('/api/gym-config', { 
         ownerPhones: phones, 
         ownerEmails: emails,
         gymName,

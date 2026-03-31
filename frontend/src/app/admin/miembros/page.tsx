@@ -61,9 +61,9 @@ export default function MiembrosPage() {
     try {
       const token = localStorage.getItem('token');
       const [plansRes, discountsRes, pmRes] = await Promise.all([
-        axios.get('http://localhost:3001/api/plans'),
-        axios.get('http://localhost:3001/api/discounts'),
-        axios.get('http://localhost:3001/api/payment-methods', { headers: { Authorization: `Bearer ${token}` } }),
+        axios.get('/api/plans'),
+        axios.get('/api/discounts'),
+        axios.get('/api/payment-methods', { headers: { Authorization: `Bearer ${token}` } }),
       ]);
       setPlans(plansRes.data);
       setDiscounts(discountsRes.data.filter((d: any) => d.isActive));
@@ -75,7 +75,7 @@ export default function MiembrosPage() {
 
   const fetchMembers = async () => {
     try {
-      const response = await axios.get('http://localhost:3001/api/members', {
+      const response = await axios.get('/api/members', {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
       });
       console.log('--- RECIBIDO DE BACKEND ---');
@@ -117,13 +117,13 @@ export default function MiembrosPage() {
       console.log('Payload de fechas:', { birthDate: data.birthDate, registrationDate: data.registrationDate });
       
       if (editingId) {
-        await axios.put(`http://localhost:3001/api/members/${editingId}`, data, { headers });
+        await axios.put(`/api/members/${editingId}`, data, { headers });
         showSuccess('Miembro actualizado exitosamente');
       } else {
-        const created = await axios.post('http://localhost:3001/api/members', data, { headers });
+        const created = await axios.post('/api/members', data, { headers });
         // Emit first invoice if requested
         if (emitInvoice && invoiceForm.planId && invoiceForm.amountTotal) {
-          await axios.post('http://localhost:3001/api/invoices', {
+          await axios.post('/api/invoices', {
             memberId: created.data.id,
             planId: invoiceForm.planId,
             discountId: invoiceForm.discountId || undefined,
@@ -203,7 +203,7 @@ export default function MiembrosPage() {
   const executeDelete = async () => {
     if (!deleteConfirm.id) return;
     const token = localStorage.getItem('token');
-    await axios.delete(`http://localhost:3001/api/members/${deleteConfirm.id}`, { headers: { Authorization: `Bearer ${token}` } });
+    await axios.delete(`/api/members/${deleteConfirm.id}`, { headers: { Authorization: `Bearer ${token}` } });
     showSuccess('Miembro eliminado exitosamente');
     setDeleteConfirm({ open: false, id: null, name: '' });
     fetchMembers();

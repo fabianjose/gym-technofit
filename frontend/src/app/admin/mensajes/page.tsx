@@ -20,8 +20,8 @@ export default function MensajesMasivos() {
     const headers = { Authorization: `Bearer ${token}` };
     try {
       const [membersRes, statusRes] = await Promise.all([
-        axios.get('http://localhost:3001/api/members', { headers }),
-        axios.get('http://localhost:3001/api/whatsapp/status', { headers }),
+        axios.get('/api/members', { headers }),
+        axios.get('/api/whatsapp/status', { headers }),
       ]);
       setMembers(membersRes.data.map((m: any) => ({ ...m, selected: true })));
       setWaConnected(statusRes.data.connected);
@@ -60,7 +60,7 @@ export default function MensajesMasivos() {
 
     for (const member of targets) {
       try {
-        await axios.post('http://localhost:3001/api/whatsapp/send', {
+        await axios.post('/api/whatsapp/send', {
           phone: member.whatsappNumber,
           message: message,
           memberId: member.id,

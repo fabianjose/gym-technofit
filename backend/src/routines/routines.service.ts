@@ -72,19 +72,27 @@ export class RoutinesService {
     const endDate = new Date(startDate);
     endDate.setMonth(endDate.getMonth() + template.durationMonths);
 
+    // 1. Obtener fechas con overrides para no sobreescribirlas
     const overrides = await this.calendarEntryRepository.find({
       where: { templateId, isOverride: true }
     });
     const overrideDates = overrides.map(e => String(e.entryDate));
 
+    // 2. Limpiar entradas generadas automáticamente existentes
     await this.calendarEntryRepository.createQueryBuilder()
       .delete()
       .where("template_id = :templateId", { templateId })
       .andWhere("is_override = false")
       .execute();
 
+    const entriesToSave: CalendarEntry[] = [];
+    const exerciseDataMap: Map<number, any[]> = new Map();
+
     let currentDate = new Date(startDate);
     let activeDaysCount = 0;
+    let dayCursor = 0;
+
+    // 3. Generar objetos en memoria
     while (currentDate <= endDate) {
       const isSaturday = currentDate.getDay() === 6;
       const isSunday = currentDate.getDay() === 0;
@@ -100,6 +108,7 @@ export class RoutinesService {
 
       const dateString = currentDate.toISOString().split('T')[0];
 
+      // SOLO generar si no hay un override manual para esta fecha
       if (!overrideDates.includes(dateString)) {
         const baseDay = template.days.find(d => d.dayIndex === dayIndex);
         if (baseDay) {
@@ -111,41 +120,68 @@ export class RoutinesService {
             isOverride: false,
             notes: baseDay.notes,
           });
-          const savedEntry = await this.calendarEntryRepository.save(entry);
-
+          entriesToSave.push(entry);
           if (baseDay.exercises && baseDay.exercises.length > 0) {
-            const calExercises = baseDay.exercises.map(ex => this.calendarEntryExerciseRepository.create({
-              calendarEntryId: savedEntry.id,
-              machineId: ex.machineId,
-              sets: ex.sets,
-              reps: ex.reps,
-              weight: ex.weight,
-              restSeconds: ex.restSeconds,
-              orderIndex: ex.orderIndex,
-              notes: ex.notes,
-            }));
-            await this.calendarEntryExerciseRepository.save(calExercises);
+            exerciseDataMap.set(dayCursor, baseDay.exercises);
           }
         }
       }
+      
+      dayCursor++;
       activeDaysCount++;
       currentDate.setDate(currentDate.getDate() + 1);
+    }
+
+    // 4. Guardado masivo de entradas
+    const savedEntries = await this.calendarEntryRepository.save(entriesToSave);
+
+    // 4. Generar y guardar ejercicios de forma masiva
+    const allExercisesToSave: CalendarEntryExercise[] = [];
+    
+    savedEntries.forEach((entry, index) => {
+      const exercisesTemplate = exerciseDataMap.get(index);
+      if (exercisesTemplate) {
+        exercisesTemplate.forEach(ex => {
+          allExercisesToSave.push(this.calendarEntryExerciseRepository.create({
+            calendarEntryId: entry.id,
+            machineId: ex.machineId,
+            sets: ex.sets,
+            reps: ex.reps,
+            weight: ex.weight,
+            restSeconds: ex.restSeconds,
+            orderIndex: ex.orderIndex,
+            notes: ex.notes,
+          }));
+        });
+      }
+    });
+
+    if (allExercisesToSave.length > 0) {
+      // Usar chunks de 100 para no saturar si la rutina es muy larga
+      await this.calendarEntryExerciseRepository.save(allExercisesToSave, { chunk: 100 });
     }
   }
 
   async getCalendar(memberId: number): Promise<CalendarEntry[]> {
-    return this.calendarEntryRepository.find({
-      where: { memberId },
-      relations: ['exercises', 'exercises.machine'],
-      order: { entryDate: 'ASC' }
-    });
+    return this.calendarEntryRepository.createQueryBuilder('ce')
+      .innerJoinAndSelect('ce.exercises', 'ex')
+      .leftJoinAndSelect('ex.machine', 'm')
+      .innerJoin('routine_templates', 'rt', 'ce.template_id = rt.id')
+      .where('ce.member_id = :memberId', { memberId })
+      .andWhere('rt.active = true')
+      .orderBy('ce.entry_date', 'ASC')
+      .addOrderBy('ex.order_index', 'ASC')
+      .getMany();
   }
 
   async getTodayEntry(memberId: number): Promise<CalendarEntry | null> {
+    // Usar la fecha local del sistema ajustada a YYYY-MM-DD
     const d = new Date();
-    const today = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    const tzOffset = d.getTimezoneOffset() * 60000;
+    const localISODate = new Date(d.getTime() - tzOffset).toISOString().split('T')[0];
+    
     return this.calendarEntryRepository.findOne({
-      where: { memberId, entryDate: today },
+      where: { memberId, entryDate: localISODate },
       relations: ['exercises', 'exercises.machine']
     });
   }

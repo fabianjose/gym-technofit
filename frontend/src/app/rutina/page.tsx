@@ -15,7 +15,7 @@ export default function RutinaPage() {
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const res = await axios.get(`http://localhost:3001/api/public/routine?cedula=${cedula}`);
+      const res = await axios.get(`/api/public/routine?cedula=${cedula}`);
       setData(res.data);
       setError('');
     } catch (err) {
@@ -161,7 +161,7 @@ export default function RutinaPage() {
             
             <video 
               ref={videoRef}
-              src={`http://localhost:3001${selectedVideo}`} 
+              src={`${selectedVideo}`} 
               controls 
               autoPlay 
               style={{ maxWidth: '90%', maxHeight: '80vh', borderRadius: '12px', border: '2px solid var(--primary-color)' }}

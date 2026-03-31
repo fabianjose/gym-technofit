@@ -11,7 +11,7 @@ export default function MetodosPagoPage() {
 
   const fetch = async () => {
     const token = localStorage.getItem('token');
-    const res = await axios.get('http://localhost:3001/api/payment-methods', { headers: { Authorization: `Bearer ${token}` } });
+    const res = await axios.get('/api/payment-methods', { headers: { Authorization: `Bearer ${token}` } });
     setMethods(res.data);
   };
 
@@ -22,9 +22,9 @@ export default function MetodosPagoPage() {
     const payload = { name: form.name, isActive: form.isActive };
     try {
       if (form.id) {
-        await axios.patch(`http://localhost:3001/api/payment-methods/${form.id}`, payload, { headers });
+        await axios.patch(`/api/payment-methods/${form.id}`, payload, { headers });
       } else {
-        await axios.post('http://localhost:3001/api/payment-methods', payload, { headers });
+        await axios.post('/api/payment-methods', payload, { headers });
       }
       setForm({ id: null, name: '', isActive: true });
       fetch();
@@ -35,14 +35,14 @@ export default function MetodosPagoPage() {
 
   const handleToggle = async (m: any) => {
     const token = localStorage.getItem('token');
-    await axios.patch(`http://localhost:3001/api/payment-methods/${m.id}`, { isActive: !m.isActive }, { headers: { Authorization: `Bearer ${token}` } });
+    await axios.patch(`/api/payment-methods/${m.id}`, { isActive: !m.isActive }, { headers: { Authorization: `Bearer ${token}` } });
     fetch();
   };
 
   const handleDelete = async (id: number) => {
     if (!confirm('¿Eliminar este método de pago?')) return;
     const token = localStorage.getItem('token');
-    await axios.delete(`http://localhost:3001/api/payment-methods/${id}`, { headers: { Authorization: `Bearer ${token}` } });
+    await axios.delete(`/api/payment-methods/${id}`, { headers: { Authorization: `Bearer ${token}` } });
     fetch();
   };
 

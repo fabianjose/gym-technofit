@@ -13,7 +13,7 @@ export default function CategoriasPage() {
 
   const fetchCategories = async () => {
     try {
-      const res = await axios.get('http://localhost:3001/api/categories');
+      const res = await axios.get('/api/categories');
       setCategories(res.data);
     } catch (e) {
       console.error(e);
@@ -24,9 +24,9 @@ export default function CategoriasPage() {
     e.preventDefault();
     const token = localStorage.getItem('token');
     if (form.id) {
-      await axios.put(`http://localhost:3001/api/categories/${form.id}`, form, { headers: { Authorization: `Bearer ${token}` } });
+      await axios.put(`/api/categories/${form.id}`, form, { headers: { Authorization: `Bearer ${token}` } });
     } else {
-      await axios.post('http://localhost:3001/api/categories', form, { headers: { Authorization: `Bearer ${token}` } });
+      await axios.post('/api/categories', form, { headers: { Authorization: `Bearer ${token}` } });
     }
     setForm({ id: null, name: '', description: '' });
     fetchCategories();
@@ -35,7 +35,7 @@ export default function CategoriasPage() {
   const handleDelete = async (id: number) => {
     if (confirm('¿Seguro que deseas eliminar esta categoría?')) {
       const token = localStorage.getItem('token');
-      await axios.delete(`http://localhost:3001/api/categories/${id}`, { headers: { Authorization: `Bearer ${token}` } });
+      await axios.delete(`/api/categories/${id}`, { headers: { Authorization: `Bearer ${token}` } });
       fetchCategories();
     }
   };

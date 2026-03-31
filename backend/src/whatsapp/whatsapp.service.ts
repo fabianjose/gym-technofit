@@ -41,7 +41,8 @@ export class WhatsappService implements OnModuleInit {
           dataPath: './.wwebjs_auth'
         }),
         puppeteer: { 
-          args: ['--no-sandbox', '--disable-setuid-sandbox'],
+          args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'],
+          executablePath: process.env.CHROMIUM_PATH || undefined,
           handleSIGINT: false,
           handleSIGTERM: false,
           handleSIGHUP: false
@@ -107,23 +108,33 @@ export class WhatsappService implements OnModuleInit {
 
   @Cron('* * * * *')
   async sendDailyRoutines() {
-    const currentHour = new Date().getHours();
-    const currentMinute = new Date().getMinutes();
-    this.logger.log(`Running WhatsApp cron job for ${currentHour}:${currentMinute.toString().padStart(2, '0')}`);
+    const d = new Date();
+    const currentHour = d.getHours();
+    const currentMinute = d.getMinutes();
+    
     if (!this.isConnected) {
-      this.logger.warn('WhatsApp no conectado. No se enviarán notificaciones.');
+      this.logger.warn(`[Cron] WhatsApp desconectado a las ${currentHour}:${currentMinute}. Saltando recordatorios.`);
       return;
     }
+
+    this.logger.log(`[Cron] Buscando miembros para notificar a las ${currentHour}:${currentMinute.toString().padStart(2, '0')}`);
     
     const members = await this.membersService.findByNotifyTime(currentHour, currentMinute);
     
+    if (members.length === 0) return;
+
+    this.logger.log(`[Cron] Notificando a ${members.length} miembros...`);
+
     for (const member of members) {
       if (!member.whatsappNumber) continue;
       
       const todayEntry = await this.routinesService.getTodayEntry(member.id);
       if (todayEntry) {
+        this.logger.log(`[Cron] Enviando rutina a ${member.fullName} (${member.whatsappNumber})`);
         const message = this.buildWhatsAppMessage(member, todayEntry);
         await this.send(member.whatsappNumber, message, member.id);
+      } else {
+        this.logger.debug(`[Cron] No se encontró rutina para ${member.fullName} el día de hoy.`);
       }
     }
   }
@@ -135,11 +146,12 @@ export class WhatsappService implements OnModuleInit {
     msg += `📅 *${dateStr}*\n\n`;
 
     if (entry.exercises && entry.exercises.length > 0) {
-      msg += `Tus ejercicios de hoy:\n\n`;
-      entry.exercises.sort((a: any, b: any) => a.orderIndex - b.orderIndex).forEach((ex: any, idx: number) => {
+      msg += `📋 *Tus ejercicios de hoy:*\n\n`;
+      const sorted = [...entry.exercises].sort((a: any, b: any) => (a.orderIndex || 0) - (b.orderIndex || 0));
+      sorted.forEach((ex: any, idx: number) => {
         msg += `${idx + 1}️⃣ *${ex.machine?.name || 'Ejercicio'}*\n`;
         msg += `   • Series: ${ex.sets} | Reps: ${ex.reps}\n`;
-        msg += `   • Descanso: ${ex.restSeconds}s\n`;
+        msg += `   • Descanso: ${ex.restSeconds || 0}s\n`;
         if (ex.notes) msg += `   📝 ${ex.notes}\n`;
         msg += '\n';
       });

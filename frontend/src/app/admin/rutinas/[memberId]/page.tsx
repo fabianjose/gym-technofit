@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react';
 import axios from 'axios';
 import { useRouter } from 'next/navigation';
+import { Loader2 } from 'lucide-react';
 
 export default function RutinaBuilder({ params }: { params: { memberId: string } }) {
   const [member, setMember] = useState<any>(null);
@@ -19,14 +20,14 @@ export default function RutinaBuilder({ params }: { params: { memberId: string }
     const headers = { Authorization: `Bearer ${localStorage.getItem('token')}` };
     try {
       const [memRes, machRes] = await Promise.all([
-        axios.get(`http://localhost:3001/api/members/${params.memberId}`, { headers }),
-        axios.get('http://localhost:3001/api/machines', { headers })
+        axios.get(`/api/members/${params.memberId}`, { headers }),
+        axios.get('/api/machines', { headers })
       ]);
       setMember(memRes.data);
       setMachines(machRes.data);
       
       try {
-        const tplRes = await axios.get(`http://localhost:3001/api/routines/member/${params.memberId}`, { headers });
+        const tplRes = await axios.get(`/api/routines/member/${params.memberId}`, { headers });
         if (tplRes.data) {
           setTemplate({ ...tplRes.data, skipSaturday: tplRes.data.skipSaturday ?? false, skipSunday: tplRes.data.skipSunday ?? true });
         }
@@ -49,19 +50,25 @@ export default function RutinaBuilder({ params }: { params: { memberId: string }
     setTemplate({ ...template, days: newDays });
   };
 
+  const [isSaving, setIsSaving] = useState(false);
+
   const handleSave = async () => {
+    if (isSaving) return;
+    setIsSaving(true);
     try {
       const payload = { ...template, cycleDays: template.days?.length || 0 };
       const headers = { Authorization: `Bearer ${localStorage.getItem('token')}` };
       if (template.id) {
-        await axios.put(`http://localhost:3001/api/routines/template/${template.id}`, payload, { headers });
+        await axios.put(`/api/routines/template/${template.id}`, payload, { headers });
       } else {
-        await axios.post(`http://localhost:3001/api/routines/member/${params.memberId}`, payload, { headers });
+        await axios.post(`/api/routines/member/${params.memberId}`, payload, { headers });
       }
       alert('Rutina guardada exitosamente.');
       router.push('/admin/miembros');
     } catch (err) {
       alert('Error guardando rutina');
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -71,7 +78,14 @@ export default function RutinaBuilder({ params }: { params: { memberId: string }
     <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
         <h2 className="title" style={{ margin: 0, fontSize: '1.8rem' }}>Rutina: {member.fullName}</h2>
-        <button onClick={handleSave} className="btn-primary" style={{ padding: '0.75rem 1.5rem', fontSize: '1rem' }}>💾 Guardar Calendario</button>
+        <button 
+          onClick={handleSave} 
+          className="btn-primary" 
+          disabled={isSaving}
+          style={{ padding: '0.75rem 1.5rem', fontSize: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+        >
+          {isSaving ? <Loader2 className="animate-spin" size={18} /> : '💾'} {isSaving ? 'Guardando...' : 'Guardar Calendario'}
+        </button>
       </div>
       
       <div className="card" style={{ padding: '1rem', marginBottom: '1.5rem', display: 'flex', gap: '1.5rem', flexWrap: 'wrap', alignItems: 'flex-end', backgroundColor: 'var(--bg-color)' }}>

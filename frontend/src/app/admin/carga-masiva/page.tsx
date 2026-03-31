@@ -60,7 +60,7 @@ export default function CargaMasiva() {
 
       for (const row of rows) {
         try {
-          await axios.post('http://localhost:3001/api/members', {
+          await axios.post('/api/members', {
             ...row,
             whatsappNumber: row.whatsappNumber || '+57',
             whatsappNotifyHour: 7,

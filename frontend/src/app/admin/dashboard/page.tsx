@@ -19,7 +19,7 @@ export default function Dashboard() {
 
   const fetchStats = async () => {
     try {
-      const res = await axios.get('http://localhost:3001/api/admins/dashboard', { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } });
+      const res = await axios.get('/api/admins/dashboard', { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } });
       setStats(res.data);
     } catch (e) {}
   };
@@ -28,8 +28,8 @@ export default function Dashboard() {
     try {
       const headers = { Authorization: `Bearer ${localStorage.getItem('token')}` };
       const [statusRes, logsRes] = await Promise.all([
-        axios.get('http://localhost:3001/api/whatsapp/status', { headers }),
-        axios.get('http://localhost:3001/api/whatsapp/logs', { headers })
+        axios.get('/api/whatsapp/status', { headers }),
+        axios.get('/api/whatsapp/logs', { headers })
       ]);
       setWaStatus({ connected: statusRes.data.connected });
       setWaLogs(logsRes.data);
@@ -39,7 +39,7 @@ export default function Dashboard() {
   const fetchMembers = async () => {
     try {
       const headers = { Authorization: `Bearer ${localStorage.getItem('token')}` };
-      const res = await axios.get('http://localhost:3001/api/members', { headers });
+      const res = await axios.get('/api/members', { headers });
       setMembers(res.data);
     } catch (e) {}
   };

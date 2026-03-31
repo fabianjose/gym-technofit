@@ -66,16 +66,22 @@ export class InvoicesService {
     // Generate and send PDF Invoice
     if (member.whatsappNumber) {
       try {
+        this.invoiceRepository.manager.connection.logger.log('log', `Iniciando envío de WhatsApp para factura de ${member.fullName}`);
         const config = await this.gymConfigService.getGlobalConfig();
         const fullInvoice = await this.findOne(savedInvoice.id);
         const pdfBuffer = await this.pdfService.generateInvoicePdf(fullInvoice, config);
         const filename = `Fac-${fullInvoice.invoiceNumber}.pdf`;
         const caption = `✅ *Pago Confirmado*\nHola ${member.fullName}, adjuntamos tu recibo Oficial.\nGracias por entrenar en ${config?.gymName || 'nuestras instalaciones'}! 💪`;
         
-        await this.whatsappService.sendPdf(member.whatsappNumber, pdfBuffer, filename, caption);
+        const success = await this.whatsappService.sendPdf(member.whatsappNumber, pdfBuffer, filename, caption);
+        if (!success) {
+          console.warn(`[InvoicesService] WhatsApp PDF no se pudo enviar a ${member.whatsappNumber}. Revisar estado del cliente.`);
+        }
       } catch (e) {
-        console.error('Error generando/enviando PDF:', e);
+        console.error('[InvoicesService] Error crítico generando/enviando PDF:', e);
       }
+    } else {
+      console.log(`[InvoicesService] Miembro ${member.fullName} no tiene número de WhatsApp registrado.`);
     }
 
     return savedInvoice;

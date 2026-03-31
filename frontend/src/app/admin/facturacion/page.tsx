@@ -50,12 +50,12 @@ function FacturacionContent() {
     try {
       const headers = { Authorization: `Bearer ${token}` };
       const [membersRes, plansRes, discountsRes, invoicesRes, configRes, pmRes] = await Promise.all([
-        axios.get('http://localhost:3001/api/members', { headers }),
-        axios.get('http://localhost:3001/api/plans', { headers }),
-        axios.get('http://localhost:3001/api/discounts/active', { headers }),
-        axios.get('http://localhost:3001/api/invoices', { headers }),
-        axios.get('http://localhost:3001/api/gym-config', { headers }),
-        axios.get('http://localhost:3001/api/payment-methods', { headers }),
+        axios.get('/api/members', { headers }),
+        axios.get('/api/plans', { headers }),
+        axios.get('/api/discounts/active', { headers }),
+        axios.get('/api/invoices', { headers }),
+        axios.get('/api/gym-config', { headers }),
+        axios.get('/api/payment-methods', { headers }),
       ]);
       setMembers(membersRes.data);
       setPlans(plansRes.data);
@@ -98,7 +98,7 @@ function FacturacionContent() {
     }
     try {
       const token = localStorage.getItem('token');
-      await axios.post('http://localhost:3001/api/invoices', {
+      await axios.post('/api/invoices', {
         memberId: selectedMember.id,
         planId: selectedPlanId,
         discountId: selectedDiscountId || undefined,
@@ -131,7 +131,7 @@ function FacturacionContent() {
     if (!window.confirm("¿Seguro que deseas eliminar esta factura de prueba? Esto retrotraerá 1 mes la membresía del cliente para esta factura.")) return;
     try {
       const token = localStorage.getItem('token');
-      await axios.delete(`http://localhost:3001/api/invoices/${invoiceId}`, { headers: { Authorization: `Bearer ${token}` } });
+      await axios.delete(`/api/invoices/${invoiceId}`, { headers: { Authorization: `Bearer ${token}` } });
       setSuccessMsg('✅ Factura de prueba eliminada.');
       setTimeout(() => setSuccessMsg(''), 4000);
       fetchData(); // reload
@@ -145,7 +145,7 @@ function FacturacionContent() {
     if (!window.confirm("¿Seguro que deseas anular esta factura? Esto retrotraerá 1 mes la fecha de membresía del cliente.")) return;
     try {
       const token = localStorage.getItem('token');
-      await axios.patch(`http://localhost:3001/api/invoices/${invoiceId}/annul`, {}, { headers: { Authorization: `Bearer ${token}` } });
+      await axios.patch(`/api/invoices/${invoiceId}/annul`, {}, { headers: { Authorization: `Bearer ${token}` } });
       setSuccessMsg('✅ Factura anulada exitosamente.');
       setTimeout(() => setSuccessMsg(''), 4000);
       fetchData();
@@ -170,7 +170,7 @@ function FacturacionContent() {
 
     try {
       const token = localStorage.getItem('token');
-      await axios.patch(`http://localhost:3001/api/invoices/${editingInvoiceId}`, {
+      await axios.patch(`/api/invoices/${editingInvoiceId}`, {
         planId: editPlanId,
         discountId: editDiscountId || undefined,
         amountTotal: total
