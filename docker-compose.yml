@@ -10,11 +10,17 @@ services:
       MYSQL_DATABASE: gymflow
       MYSQL_USER: gymuser
       MYSQL_PASSWORD: gympassword
-    command: --innodb-buffer-pool-size=64M
+      TZ: America/Bogota  # Sincroniza la hora de la DB con Colombia
+    # Ajuste para servidores de 1GB de RAM: limitamos el uso de memoria de MySQL
+    command: --innodb-buffer-pool-size=64M --max-connections=50
     ports:
       - "3306:3306"
     volumes:
       - gymflow_data:/var/lib/mysql
+    deploy:
+      resources:
+        limits:
+          memory: 256M
 
   backend:
     build:
@@ -24,17 +30,18 @@ services:
     restart: always
     depends_on:
       - db
-    # --- CAMBIO AQUÍ: Usamos el archivo del servidor ---
     env_file:
       - ./backend/.env
-    # --------------------------------------------------
-
+    environment:
+      - TZ=America/Bogota  # CRÍTICO: Para que el Cron de las 11:38 AM funcione en hora local
     deploy:
       resources:
         limits:
           cpus: '0.70'
+          memory: 512M
     volumes:
       - ./backend/uploads:/app/uploads 
+      # PERSISTENCIA DE WHATSAPP: Mantiene la sesión iniciada tras reinicios
       - ./backend/.wwebjs_auth:/app/.wwebjs_auth
     expose:
       - "3001"
@@ -45,8 +52,14 @@ services:
       dockerfile: Dockerfile
     container_name: gym_frontend
     restart: always
+    environment:
+      - TZ=America/Bogota
     depends_on:
       - backend
+    deploy:
+      resources:
+        limits:
+          memory: 128M
     expose:
       - "3000"
 
@@ -54,6 +67,8 @@ services:
     image: nginx:alpine
     container_name: gym_nginx
     restart: always
+    environment:
+      - TZ=America/Bogota
     ports:
       - "80:80"
     volumes:
