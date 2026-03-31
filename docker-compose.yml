@@ -1,18 +1,65 @@
 version: '3.8'
+
 services:
-  mysql:
+  db:
     image: mysql:8.0
-    container_name: gymflow_db
+    container_name: gym_db
     restart: always
     environment:
       MYSQL_ROOT_PASSWORD: rootpassword
       MYSQL_DATABASE: gymflow
       MYSQL_USER: gymuser
       MYSQL_PASSWORD: gympassword
+    # Limitamos los recursos de MySQL para que no ahogue tu servidor de 512MB
+    command: --innodb-buffer-pool-size=64M
     ports:
       - "3306:3306"
     volumes:
       - gymflow_data:/var/lib/mysql
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: gym_backend
+    restart: always
+    depends_on:
+      - db
+    environment:
+      - DB_HOST=db
+      - DB_PORT=3306
+      - DB_USER=gymuser
+      - DB_PASSWORD=gympassword
+      - DB_NAME=gymflow
+    volumes:
+      # Protegemos las imágenes/videos subidos por los administradores
+      - ./backend/uploads:/app/uploads 
+    # Nginx manejará el puerto, ya no necesitamos exponerlo directamente al host
+    expose:
+      - "3001"
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: gym_frontend
+    restart: always
+    depends_on:
+      - backend
+    expose:
+      - "3000"
+
+  nginx:
+    image: nginx:alpine
+    container_name: gym_nginx
+    restart: always
+    ports:
+      - "80:80"
+    volumes:
+      - ./gym_nginx.conf:/etc/nginx/conf.d/default.conf
+    depends_on:
+      - frontend
+      - backend
 
 volumes:
   gymflow_data:
