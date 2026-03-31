@@ -19,6 +19,7 @@ jobs:
           host: ${{ secrets.AWS_HOST }}
           username: ${{ secrets.AWS_USER }}
           key: ${{ secrets.AWS_SSH_KEY }}
+          command_timeout: 30m
           script: |
             # 1. Entrar a la carpeta del proyecto en el servidor
             # REEMPLAZA '/ruta/a/tu/proyecto' con la ruta real en tu AWS
