@@ -1,0 +1,31 @@
+name: Deploy Gym TechnoFit to AWS
+
+on:
+  push:
+    branches:
+      - main # Se ejecuta solo cuando haces push a la rama main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.AWS_HOST }}
+          username: ${{ secrets.AWS_USER }}
+          key: ${{ secrets.AWS_SSH_KEY }}
+          script: |
+            # 1. Entrar a la carpeta del proyecto en el servidor
+            # REEMPLAZA '/ruta/a/tu/proyecto' con la ruta real en tu AWS
+            cd /ruta/a/tu/proyecto/gym
+            
+            # 2. Descargar los últimos cambios de GitHub
+            git pull origin main
+            
+            # 3. Reconstruir y levantar los contenedores de Docker
+            docker-compose up -d --build
