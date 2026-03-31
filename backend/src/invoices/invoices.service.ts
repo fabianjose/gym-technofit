@@ -64,25 +64,30 @@ export class InvoicesService {
     await this.membersService.update(member.id, { expirationDate: formattedExpDate });
 
     // Generate and send PDF Invoice
-    if (member.whatsappNumber) {
-      try {
-        this.invoiceRepository.manager.connection.logger.log('log', `Iniciando envío de WhatsApp para factura de ${member.fullName}`);
-        const config = await this.gymConfigService.getGlobalConfig();
-        const fullInvoice = await this.findOne(savedInvoice.id);
-        const pdfBuffer = await this.pdfService.generateInvoicePdf(fullInvoice, config);
-        const filename = `Fac-${fullInvoice.invoiceNumber}.pdf`;
-        const caption = `✅ *Pago Confirmado*\nHola ${member.fullName}, adjuntamos tu recibo Oficial.\nGracias por entrenar en ${config?.gymName || 'nuestras instalaciones'}! 💪`;
-        
-        const success = await this.whatsappService.sendPdf(member.whatsappNumber, pdfBuffer, filename, caption);
-        if (!success) {
-          console.warn(`[InvoicesService] WhatsApp PDF no se pudo enviar a ${member.whatsappNumber}. Revisar estado del cliente.`);
-        }
-      } catch (e) {
-        console.error('[InvoicesService] Error crítico generando/enviando PDF:', e);
-      }
-    } else {
-      console.log(`[InvoicesService] Miembro ${member.fullName} no tiene número de WhatsApp registrado.`);
+   if (member.whatsappNumber) {
+  // Usamos un pequeño delay para que el servidor respire entre generar el PDF y enviarlo
+  setTimeout(async () => {
+    try {
+      const config = await this.gymConfigService.getGlobalConfig();
+      const fullInvoice = await this.findOne(savedInvoice.id);
+      
+      // Generamos el PDF
+      const pdfBuffer = await this.pdfService.generateInvoicePdf(fullInvoice, config);
+      
+      // Esperamos 2 segundos adicionales antes de disparar el envío por WhatsApp
+      await new Promise(resolve => setTimeout(resolve, 2000));
+
+      await this.whatsappService.sendPdf(
+        member.whatsappNumber, 
+        pdfBuffer, 
+        `Fac-${fullInvoice.invoiceNumber}.pdf`, 
+        `✅ *Pago Confirmado*...`
+      );
+    } catch (e) {
+      console.error('Error en el proceso de envío:', e);
     }
+  }, 1000); 
+}
 
     return savedInvoice;
   }

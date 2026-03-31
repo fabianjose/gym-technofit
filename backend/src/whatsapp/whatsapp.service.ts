@@ -108,9 +108,11 @@ export class WhatsappService implements OnModuleInit {
 
   @Cron('* * * * *')
   async sendDailyRoutines() {
-    const d = new Date();
-    const currentHour = d.getHours();
-    const currentMinute = d.getMinutes();
+    const bogotaDate = new Date(new Date().toLocaleString("en-US", {timeZone: "America/Bogota"}));
+  const currentHour = bogotaDate.getHours();
+  const currentMinute = bogotaDate.getMinutes();
+
+  this.logger.log(`[Cron] Buscando miembros para notificar a las ${currentHour}:${currentMinute.toString().padStart(2, '0')} (Hora Bogota)`);
     
     if (!this.isConnected) {
       this.logger.warn(`[Cron] WhatsApp desconectado a las ${currentHour}:${currentMinute}. Saltando recordatorios.`);
