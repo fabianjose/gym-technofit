@@ -10,7 +10,6 @@ services:
       MYSQL_DATABASE: gymflow
       MYSQL_USER: gymuser
       MYSQL_PASSWORD: gympassword
-    # Limitamos los recursos de MySQL para que no ahogue tu servidor de 512MB
     command: --innodb-buffer-pool-size=64M
     ports:
       - "3306:3306"
@@ -25,16 +24,12 @@ services:
     restart: always
     depends_on:
       - db
-    environment:
-      - DB_HOST=db
-      - DB_PORT=3306
-      - DB_USER=gymuser
-      - DB_PASSWORD=gympassword
-      - DB_NAME=gymflow
+    # --- CAMBIO AQUÍ: Usamos el archivo del servidor ---
+    env_file:
+      - ./backend/.env
+    # --------------------------------------------------
     volumes:
-      # Protegemos las imágenes/videos subidos por los administradores
       - ./backend/uploads:/app/uploads 
-    # Nginx manejará el puerto, ya no necesitamos exponerlo directamente al host
     expose:
       - "3001"
 
