@@ -1,20 +1,20 @@
 /**
  * Seed script: populates ALL modules with realistic test data
- * Prerequisites: backend running on http://localhost:3001
+ * Prerequisites: backend running on https://gym.remotepcsolutions.com
  * Run with: node seed-data.js
  */
 
-const http = require('http');
+const https = require('https'); // ¡OJO! Cambiado a https
 
-const BASE_URL = 'http://localhost:3001';
+const BASE_URL = 'https://gym.remotepcsolutions.com';
 
 // ---------- helpers ----------
 function req(method, path, body, token) {
   return new Promise((resolve, reject) => {
     const payload = body ? JSON.stringify(body) : null;
     const opts = {
-      hostname: 'localhost',
-      port: 3001,
+      hostname: 'gym.remotepcsolutions.com', // Apuntando a tu servidor real
+      port: 443,                             // Puerto de Cloudflare
       path,
       method,
       headers: {
@@ -23,7 +23,9 @@ function req(method, path, body, token) {
         ...(payload ? { 'Content-Length': Buffer.byteLength(payload) } : {}),
       },
     };
-    const r = http.request(opts, (res) => {
+    
+    // Cambiado de http.request a https.request
+    const r = https.request(opts, (res) => {
       let data = '';
       res.on('data', (c) => (data += c));
       res.on('end', () => {
@@ -31,6 +33,7 @@ function req(method, path, body, token) {
         catch { resolve({ status: res.statusCode, body: data }); }
       });
     });
+    
     r.on('error', reject);
     if (payload) r.write(payload);
     r.end();
@@ -39,6 +42,8 @@ function req(method, path, body, token) {
 
 function log(msg) { console.log(`  ✓ ${msg}`); }
 function warn(msg) { console.log(`  ⚠ ${msg}`); }
+
+// ... de aquí en adelante tu función main() queda exactamente igual
 
 // ---------- main ----------
 async function main() {

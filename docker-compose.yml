@@ -28,6 +28,11 @@ services:
     env_file:
       - ./backend/.env
     # --------------------------------------------------
+
+    deploy:
+      resources:
+        limits:
+          cpus: '0.70'
     volumes:
       - ./backend/uploads:/app/uploads 
     expose:
