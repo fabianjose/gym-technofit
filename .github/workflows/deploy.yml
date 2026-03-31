@@ -22,7 +22,7 @@ jobs:
           script: |
             # 1. Entrar a la carpeta del proyecto en el servidor
             # REEMPLAZA '/ruta/a/tu/proyecto' con la ruta real en tu AWS
-            cd /ruta/a/tu/proyecto/gym
+            cd /home/ubuntu/gym-technofit
             
             # 2. Descargar los últimos cambios de GitHub
             git pull origin main
