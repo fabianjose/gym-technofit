@@ -32,8 +32,8 @@ export class WhatsappService implements OnModuleInit {
     }, 5000);
   }
 
-private initializeClient() {
-    this.logger.log('Inicializando cliente de WhatsApp Web con optimización de CPU...');
+  private initializeClient() {
+    this.logger.log('Inicializando cliente de WhatsApp Web...');
     try {
       this.client = new Client({
         authStrategy: new LocalAuth({
@@ -41,18 +41,11 @@ private initializeClient() {
           dataPath: './.wwebjs_auth'
         }),
         puppeteer: { 
-          headless: true, // Siempre en true para producción
-          args: [
-            '--no-sandbox', 
-            '--disable-setuid-sandbox', 
-            '--disable-dev-shm-usage',
-            '--disable-accelerated-2d-canvas',
-            '--no-first-run',
-            '--no-zygote',
-            '--single-process', // CRÍTICO para servidores de 1 solo núcleo
-            '--disable-gpu'
-          ],
+          args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'],
           executablePath: process.env.CHROMIUM_PATH || undefined,
+          handleSIGINT: false,
+          handleSIGTERM: false,
+          handleSIGHUP: false
         }
       });
 
@@ -77,18 +70,11 @@ private initializeClient() {
         this.isConnected = false;
       });
 
-   this.client.on('disconnected', async (reason) => {
-        this.logger.log('WhatsApp desconectado. Limpiando procesos zombies...');
+      this.client.on('disconnected', (reason) => {
+        this.logger.log('WhatsApp Web fue desconectado: ' + reason);
         this.isConnected = false;
-        
-        try {
-          // IMPORTANTE: Cerramos el navegador antes de crear uno nuevo
-          await this.client.destroy(); 
-        } catch (e) {
-          this.logger.error('Error al destruir cliente antiguo', e);
-        }
-
-        this.logger.log('Re-intentando en 30 segundos...');
+        this.qrCodeDataUrl = '';
+        this.logger.log('Intentando re-inicializar en 30 segundos...');
         setTimeout(() => this.initializeClient(), 30000);
       });
 
