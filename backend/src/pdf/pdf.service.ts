@@ -15,6 +15,7 @@ export class PdfService {
       // Diseño simple y rápido
       doc.fontSize(20).text('RECIBO DE PAGO', { align: 'center' });
       doc.moveDown();
+      doc.moveTo(50, 100).lineTo(550, 100).stroke();
       doc.fontSize(12).text(`Gimnasio: ${gymConfig?.gymName || 'GymFlow'}`);
       doc.text(`NIT: ${gymConfig?.nit || 'N/A'}`);
       doc.moveDown();
