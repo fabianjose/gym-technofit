@@ -27,5 +27,8 @@ jobs:
             # 1. Apagamos y limpiamos los contenedores actuales para evitar el bug de ContainerConfig
             docker-compose down
             
+            # Limpieza forzada de bloqueos de Chromium para evitar colisiones de sesión en WhatsApp Web
+            sudo find ./backend/.wwebjs_auth -name 'Singleton*' -delete || true
+            
             # 2. Reconstruimos y levantamos en limpio
             docker-compose up -d --build

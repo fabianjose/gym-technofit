@@ -1,4 +1,4 @@
-import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
+import { Injectable, Logger, OnModuleInit, OnApplicationShutdown } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ConfigService } from '@nestjs/config';
@@ -10,7 +10,7 @@ import { Client, LocalAuth } from 'whatsapp-web.js';
 import * as qrcode from 'qrcode';
 
 @Injectable()
-export class WhatsappService implements OnModuleInit {
+export class WhatsappService implements OnModuleInit, OnApplicationShutdown {
   private readonly logger = new Logger(WhatsappService.name);
   private client: Client;
   private qrCodeDataUrl: string = '';
@@ -30,6 +30,17 @@ export class WhatsappService implements OnModuleInit {
     setTimeout(() => {
       this.initializeClient();
     }, 5000);
+  }
+
+  async onApplicationShutdown(signal?: string) {
+    this.logger.log(`Cerrando gracefulmente el cliente de WhatsApp por señal: ${signal}`);
+    try {
+      if (this.client) {
+        await this.client.destroy();
+      }
+    } catch (e) {
+      this.logger.error('Error durante la limpieza de WhatsApp al apagar', e);
+    }
   }
 
   private initializeClient() {
