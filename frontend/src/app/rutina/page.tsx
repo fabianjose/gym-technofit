@@ -53,84 +53,96 @@ export default function RutinaPage() {
             gap: '1rem', 
             alignItems: 'flex-start' 
           }}>
-            {data.calendar.map((day: any) => {
-              const isRest = !day.exercises || day.exercises.length === 0;
-              const entryDateObj = new Date(day.entryDate);
-              const today = new Date();
-              const isToday = entryDateObj.getUTCFullYear() === today.getFullYear() && 
-                              entryDateObj.getUTCMonth() === today.getMonth() && 
-                              entryDateObj.getUTCDate() === today.getDate();
+            {data.calendar
+              .filter((day: any) => {
+                const tzOffset = (new Date()).getTimezoneOffset() * 60000;
+                const localISOToday = new Date(Date.now() - tzOffset).toISOString().split('T')[0];
+                const entryDateStr = day.entryDate.toString().split('T')[0];
+                return entryDateStr >= localISOToday;
+              })
+              .map((day: any) => {
+                const isRest = !day.exercises || day.exercises.length === 0;
+                
+                const tzOffset = (new Date()).getTimezoneOffset() * 60000;
+                const localISOToday = new Date(Date.now() - tzOffset).toISOString().split('T')[0];
+                const entryDateStr = day.entryDate.toString().split('T')[0];
+                const isToday = entryDateStr === localISOToday;
 
-              return (
-                <div key={day.id} style={{ 
-                  flex: '1 1 260px',
-                  maxWidth: '350px',
-                  backgroundColor: isRest ? 'rgba(0,0,0,0.2)' : 'var(--panel-bg)',
-                  border: isToday ? '2px solid var(--primary-color)' : (isRest ? '1px dashed var(--border-color)' : '1px solid var(--border-color)'),
-                  boxShadow: isToday ? '0 0 15px rgba(0, 210, 138, 0.15)' : 'none',
-                  borderRadius: '12px',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  overflow: 'hidden',
-                  position: 'relative'
-                }}>
-                  {isToday && (
-                    <div style={{ position: 'absolute', top: 0, right: 0, backgroundColor: 'var(--primary-color)', color: '#000', padding: '0.2rem 0.8rem', borderBottomLeftRadius: '12px', fontSize: '0.75rem', fontWeight: 'bold', zIndex: 2 }}>
-                      HOY
-                    </div>
-                  )}
-                  <div style={{ padding: '1rem', backgroundColor: isToday ? 'rgba(0, 210, 138, 0.1)' : (isRest ? 'transparent' : 'rgba(0, 210, 138, 0.05)'), borderBottom: isToday ? '1px solid rgba(0,210,138,0.3)' : '1px solid var(--border-color)', textAlign: 'center' }}>
-                    <h3 style={{ margin: 0, color: isToday ? 'var(--primary-color)' : (isRest ? 'var(--text-muted)' : 'var(--primary-color)'), fontSize: '1.2rem', textTransform: 'capitalize', fontWeight: isToday ? 'bold' : 'normal' }}>
-                      {entryDateObj.toLocaleDateString('es-ES', { weekday: 'long', timeZone: 'UTC' })}
-                    </h3>
-                    <p style={{ margin: '0.2rem 0 0 0', fontSize: '0.9rem', color: isToday ? '#fff' : 'var(--text-muted)', fontWeight: isToday ? 'bold' : 'normal' }}>
-                      {entryDateObj.toLocaleDateString('es-ES', { day: 'numeric', month: 'short', timeZone: 'UTC' })}
-                    </p>
-                  </div>
-                  
-                  <div style={{ padding: '1rem', flex: 1 }}>
-                    {isRest ? (
-                      <div style={{ display: 'flex', height: '100%', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)', fontStyle: 'italic' }}>
-                        {day.notes || 'Día de Descanso'}
-                      </div>
-                    ) : (
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                        {day.notes && <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '0.5rem' }}>ℹ️ {day.notes}</p>}
-                        {day.exercises.sort((a:any, b:any) => a.orderIndex - b.orderIndex).map((ex: any, idx: number) => (
-                          <div key={ex.id} style={{ padding: '0.5rem 0.6rem', backgroundColor: 'rgba(255,255,255,0.02)', borderRadius: '6px', borderLeft: '3px solid var(--primary-color)', fontSize: '0.8rem', lineHeight: '1.4', display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem' }}>
-                              <div style={{ display: 'flex', alignItems: 'center', minWidth: 0, flex: 1 }}>
-                                <span style={{ color: 'var(--primary-color)', marginRight: '0.4rem', fontSize: '0.85rem', flexShrink: 0, fontWeight: 'bold' }}>{idx + 1}.</span>
-                                <span style={{textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap', fontWeight: 'bold', color: '#fff'}}>{ex.machine?.name}</span>
-                                {ex.machine?.category && (
-                                  <span style={{ marginLeft: '0.4rem', backgroundColor: 'rgba(255,255,255,0.1)', color: 'var(--text-muted)', fontSize: '0.6rem', padding: '0.1rem 0.3rem', borderRadius: '4px', textTransform: 'uppercase', flexShrink: 0 }}>
-                                    {ex.machine.category}
-                                  </span>
-                                )}
-                              </div>
-                              {ex.machine?.videoUrl && (
-                                <button
-                                  onClick={() => setSelectedVideo(ex.machine.videoUrl)}
-                                  title="Ver Video"
-                                  style={{ background: 'none', border: 'none', color: 'var(--primary-color)', cursor: 'pointer', display: 'flex', alignItems: 'center', padding: 0, flexShrink: 0 }}
-                                >
-                                  <PlayCircle size={22} strokeWidth={2.5} />
-                                </button>
-                              )}
-                            </div>
-                            <div style={{ color: 'var(--text-muted)', display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.2rem', fontSize: '0.75rem', textAlign: 'center', backgroundColor: 'rgba(0,0,0,0.2)', padding: '0.3rem', borderRadius: '4px' }}>
-                              <span>Series: <strong style={{color: 'var(--primary-color)'}}>{ex.sets}</strong></span>
-                              <span>Reps: <strong style={{color: '#fff'}}>{ex.reps}</strong></span>
-                              <span>Desc: <strong style={{color: '#fff'}}>{ex.restSeconds || 0}s</strong></span>
-                            </div>
-                          </div>
-                        ))}
+                const [year, month, dayNumber] = entryDateStr.split('-').map(Number);
+                const entryDateObj = new Date(year, month - 1, dayNumber);
+
+                const primaryHighlight = '#e2ff43'; // Lima/Amarillo vibrante
+
+                return (
+                  <div key={day.id} style={{ 
+                    flex: '1 1 260px',
+                    maxWidth: '350px',
+                    backgroundColor: isRest ? 'rgba(0,0,0,0.2)' : 'var(--panel-bg)',
+                    border: isToday ? `2px solid ${primaryHighlight}` : (isRest ? '1px dashed var(--border-color)' : '1px solid var(--border-color)'),
+                    boxShadow: isToday ? `0 0 20px rgba(226, 255, 67, 0.2)` : 'none',
+                    borderRadius: '12px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    overflow: 'hidden',
+                    position: 'relative'
+                  }}>
+                    {isToday && (
+                      <div style={{ position: 'absolute', top: 0, right: 0, backgroundColor: primaryHighlight, color: '#000', padding: '0.2rem 0.8rem', borderBottomLeftRadius: '12px', fontSize: '0.75rem', fontWeight: 'bold', zIndex: 2 }}>
+                        HOY
                       </div>
                     )}
+                    <div style={{ padding: '1rem', backgroundColor: isToday ? 'rgba(226, 255, 67, 0.1)' : (isRest ? 'transparent' : 'rgba(0, 210, 138, 0.05)'), borderBottom: isToday ? `1px solid rgba(226, 255, 67, 0.3)` : '1px solid var(--border-color)', textAlign: 'center' }}>
+                      <h3 style={{ margin: 0, color: isToday ? primaryHighlight : (isRest ? 'var(--text-muted)' : 'var(--primary-color)'), fontSize: '1.2rem', textTransform: 'capitalize', fontWeight: isToday ? 'bold' : 'normal' }}>
+                        {entryDateObj.toLocaleDateString('es-ES', { weekday: 'long' })}
+                      </h3>
+                      <p style={{ margin: '0.2rem 0 0 0', fontSize: '0.9rem', color: isToday ? primaryHighlight : 'var(--text-muted)', fontWeight: isToday ? 'bold' : 'normal' }}>
+                        {entryDateObj.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}
+                      </p>
+                    </div>
+                    
+                    <div style={{ padding: '1rem', flex: 1 }}>
+                      {isRest ? (
+                        <div style={{ display: 'flex', height: '100%', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)', fontStyle: 'italic' }}>
+                          {day.notes || 'Día de Descanso'}
+                        </div>
+                      ) : (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                          {day.notes && <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '0.5rem' }}>ℹ️ {day.notes}</p>}
+                          {day.exercises.sort((a:any, b:any) => a.orderIndex - b.orderIndex).map((ex: any, idx: number) => (
+                            <div key={ex.id} style={{ padding: '0.5rem 0.6rem', backgroundColor: 'rgba(255,255,255,0.02)', borderRadius: '6px', borderLeft: `3px solid ${isToday ? primaryHighlight : 'var(--primary-color)'}`, fontSize: '0.8rem', lineHeight: '1.4', display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', minWidth: 0, flex: 1 }}>
+                                  <span style={{ color: isToday ? primaryHighlight : 'var(--primary-color)', marginRight: '0.4rem', fontSize: '0.85rem', flexShrink: 0, fontWeight: 'bold' }}>{idx + 1}.</span>
+                                  <span style={{textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap', fontWeight: 'bold', color: '#fff'}}>{ex.machine?.name}</span>
+                                  {ex.machine?.category && (
+                                    <span style={{ marginLeft: '0.4rem', backgroundColor: 'rgba(255,255,255,0.1)', color: 'var(--text-muted)', fontSize: '0.6rem', padding: '0.1rem 0.3rem', borderRadius: '4px', textTransform: 'uppercase', flexShrink: 0 }}>
+                                      {ex.machine.category}
+                                    </span>
+                                  )}
+                                </div>
+                                {ex.machine?.videoUrl && (
+                                  <button
+                                    onClick={() => setSelectedVideo(ex.machine.videoUrl)}
+                                    title="Ver Video"
+                                    style={{ background: 'none', border: 'none', color: isToday ? primaryHighlight : 'var(--primary-color)', cursor: 'pointer', display: 'flex', alignItems: 'center', padding: 0, flexShrink: 0 }}
+                                  >
+                                    <PlayCircle size={22} strokeWidth={2.5} />
+                                  </button>
+                                )}
+                              </div>
+                              <div style={{ color: 'var(--text-muted)', display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.2rem', fontSize: '0.75rem', textAlign: 'center', backgroundColor: 'rgba(0,0,0,0.2)', padding: '0.3rem', borderRadius: '4px' }}>
+                                <span>Series: <strong style={{color: isToday ? primaryHighlight : 'var(--primary-color)'}}>{ex.sets}</strong></span>
+                                <span>Reps: <strong style={{color: '#fff'}}>{ex.reps}</strong></span>
+                                <span>Desc: <strong style={{color: '#fff'}}>{ex.restSeconds || 0}s</strong></span>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                   </div>
-                </div>
-              );
-            })}
+                );
+              })}
           </div>
         </main>
 

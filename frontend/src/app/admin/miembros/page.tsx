@@ -26,7 +26,10 @@ export default function MiembrosPage() {
     notifyTime: '07:00',
     birthDate: '',
     registrationDate: new Date().toISOString().split('T')[0],
-    expirationDate: ''
+    expirationDate: '',
+    defaultPlanId: '',
+    defaultDiscountId: '',
+    active: true
   });
 
   const [measurements, setMeasurements] = useState({
@@ -107,6 +110,7 @@ export default function MiembrosPage() {
       registrationDate: form.registrationDate || null,
       // expirationDate la calcula el backend desde registrationDate
       expirationDate: undefined,
+      active: form.active,
       measurements
     };
     
@@ -172,7 +176,10 @@ export default function MiembrosPage() {
       notifyTime: `${h}:${min}`,
       birthDate: extractDateStr(m.birthDate),
       registrationDate: extractDateStr(m.registrationDate) || new Date().toISOString().split('T')[0],
-      expirationDate: extractDateStr(m.expirationDate)
+      expirationDate: extractDateStr(m.expirationDate),
+      defaultPlanId: m.defaultPlanId?.toString() || '',
+      defaultDiscountId: m.defaultDiscountId?.toString() || '',
+      active: m.active ?? true
     });
     setMeasurements({
       peso: m.measurements?.peso || '',
@@ -190,7 +197,7 @@ export default function MiembrosPage() {
     setEditingId(null);
     setEmitInvoice(false);
     setInvoiceForm({ planId: '', discountId: '', paymentMethod: 'Efectivo', amountTotal: '' });
-    setForm({ cedula: '', fullName: '', email: '', whatsappNumber: '+57', notifyTime: '07:00', birthDate: '', registrationDate: new Date().toISOString().split('T')[0], expirationDate: '' });
+    setForm({ cedula: '', fullName: '', email: '', whatsappNumber: '+57', notifyTime: '07:00', birthDate: '', registrationDate: new Date().toISOString().split('T')[0], expirationDate: '', defaultPlanId: '', defaultDiscountId: '', active: true });
     setMeasurements({ peso: '', altura: '', pecho: '', brazos: '', cintura: '', piernas: '' });
     setActiveTab('personal');
     setShowModal(false);
@@ -272,6 +279,13 @@ export default function MiembrosPage() {
                     <label style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>WhatsApp *</label>
                     <input value={form.whatsappNumber} onChange={e => setForm({...form, whatsappNumber: e.target.value})} placeholder="+57300..." required style={{ marginBottom: 0, width: '100%', padding: '0.75rem', backgroundColor: 'var(--bg-color)', borderRadius: '8px', border: '1px solid var(--border-color)', color: '#fff' }} />
                   </div>
+                  
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', backgroundColor: 'rgba(255,255,255,0.05)', padding: '0.5rem', borderRadius: '8px' }}>
+                    <input type="checkbox" id="activeMember" checked={form.active} onChange={e => setForm({...form, active: e.target.checked})} style={{ width: '20px', height: '20px', cursor: 'pointer', margin: 0 }} />
+                    <label htmlFor="activeMember" style={{ cursor: 'pointer', fontWeight: 'bold', fontSize: '0.85rem', color: form.active ? 'var(--primary-color)' : 'var(--danger)' }}>
+                      {form.active ? 'Membresía Activa (Recibe alertas)' : 'Inactivo (No notificar, ni enviar masivos)'}
+                    </label>
+                  </div>
 
 
                   <div>
@@ -287,6 +301,38 @@ export default function MiembrosPage() {
                   <div>
                     <label style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Fecha de Inscripción *</label>
                     <input type="date" required value={form.registrationDate} onChange={e => setForm({...form, registrationDate: e.target.value})} style={{ marginBottom: 0, padding: '0.75rem', backgroundColor: 'var(--bg-color)', borderRadius: '8px', border: '1px solid var(--border-color)', color: '#fff', width: '100%' }} />
+                  </div>
+
+                  <div style={{ gridColumn: '1 / -1', marginTop: '1rem', borderTop: '1px solid var(--border-color)', paddingTop: '1rem' }}>
+                    <label style={{ fontSize: '0.9rem', color: 'var(--primary-color)', fontWeight: 'bold' }}>Plan y Descuento por Defecto (Para facturas futuras)</label>
+                  </div>
+
+                  <div>
+                     <label style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Plan Predeterminado</label>
+                     <select 
+                        value={form.defaultPlanId} 
+                        onChange={e => setForm({...form, defaultPlanId: e.target.value})}
+                        style={{ marginBottom: 0, width: '100%', padding: '0.75rem', backgroundColor: 'var(--bg-color)', borderRadius: '8px', border: '1px solid var(--border-color)', color: '#fff' }}
+                     >
+                        <option value="">— Sin plan asignado —</option>
+                        {plans.map((p: any) => (
+                          <option key={p.id} value={p.id}>{p.name}</option>
+                        ))}
+                     </select>
+                  </div>
+
+                  <div>
+                     <label style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Descuento Predeterminado</label>
+                     <select 
+                        value={form.defaultDiscountId} 
+                        onChange={e => setForm({...form, defaultDiscountId: e.target.value})}
+                        style={{ marginBottom: 0, width: '100%', padding: '0.75rem', backgroundColor: 'var(--bg-color)', borderRadius: '8px', border: '1px solid var(--border-color)', color: '#fff' }}
+                     >
+                        <option value="">— Sin descuento —</option>
+                        {discounts.map((d: any) => (
+                          <option key={d.id} value={d.id}>{d.name} ({d.percentage}%)</option>
+                        ))}
+                     </select>
                   </div>
 
                 </div>
@@ -445,7 +491,10 @@ export default function MiembrosPage() {
             {members.filter((m: any) => m.fullName.toLowerCase().includes(searchQuery.toLowerCase()) || m.cedula.includes(searchQuery)).map((m: any) => (
               <tr key={m.id} style={{ borderBottom: '1px solid var(--border-color)', transition: 'background 0.2s' }}>
                 <td style={{ padding: '1rem' }}>{m.cedula}</td>
-                <td style={{ padding: '1rem', fontWeight: 'bold' }}>{m.fullName}</td>
+                <td style={{ padding: '1rem', fontWeight: 'bold' }}>
+                  {m.fullName}
+                  {m.active === false && <span style={{ marginLeft: '0.5rem', backgroundColor: 'var(--danger)', color: 'white', padding: '0.1rem 0.5rem', borderRadius: '12px', fontSize: '0.7rem' }}>INACTIVO</span>}
+                </td>
                 <td style={{ padding: '1rem', fontSize: '0.9rem', color: 'var(--text-muted)' }}>
                   <div>{m.whatsappNumber}</div>
                 </td>

@@ -34,7 +34,7 @@ export class MembersService {
   }
 
   async findAll(): Promise<Member[]> {
-    const members = await this.membersRepository.find({ where: { active: true } });
+    const members = await this.membersRepository.find({ order: { id: 'DESC' } });
 
     // Corregir fechas faltantes o mal calculadas (bug UTC previo)
     const toFix = members.filter(m => {
@@ -71,7 +71,7 @@ export class MembersService {
   }
 
   async findByCedula(cedula: string): Promise<Member> {
-    const member = await this.membersRepository.findOne({ where: { cedula, active: true } });
+    const member = await this.membersRepository.findOne({ where: { cedula } });
     if (!member) throw new NotFoundException('Member not found');
     return member;
   }

@@ -61,7 +61,11 @@ export class InvoicesService {
     }
     baseDate.setMonth(baseDate.getMonth() + 1);
     const formattedExpDate = baseDate.toISOString().split('T')[0];
-    await this.membersService.update(member.id, { expirationDate: formattedExpDate });
+    await this.membersService.update(member.id, { 
+      expirationDate: formattedExpDate,
+      defaultPlanId: planId,
+      defaultDiscountId: discountId || undefined
+    });
 
     // Generate and send PDF Invoice
    if (member.whatsappNumber) {

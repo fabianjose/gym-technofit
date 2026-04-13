@@ -1,7 +1,8 @@
 "use client";
 import { useEffect, useState } from 'react';
 import axios from 'axios';
-import { Send, Users, CheckCircle, AlertCircle } from 'lucide-react';
+import { Send, Users, CheckCircle, AlertCircle, Smile } from 'lucide-react';
+import EmojiPicker, { Theme } from 'emoji-picker-react';
 
 export default function MensajesMasivos() {
   const [members, setMembers] = useState<any[]>([]);
@@ -10,6 +11,7 @@ export default function MensajesMasivos() {
   const [waConnected, setWaConnected] = useState(false);
   const [results, setResults] = useState<{ sent: string[]; failed: string[] } | null>(null);
   const [selectedAll, setSelectedAll] = useState(true);
+  const [showPicker, setShowPicker] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -23,7 +25,7 @@ export default function MensajesMasivos() {
         axios.get('/api/members', { headers }),
         axios.get('/api/whatsapp/status', { headers }),
       ]);
-      setMembers(membersRes.data.map((m: any) => ({ ...m, selected: true })));
+      setMembers(membersRes.data.filter((m: any) => m.active !== false).map((m: any) => ({ ...m, selected: true })));
       setWaConnected(statusRes.data.connected);
     } catch (e) {
       console.error(e);
@@ -147,8 +149,27 @@ export default function MensajesMasivos() {
 
         {/* Composición del mensaje */}
         <div>
-          <div className="card" style={{ marginBottom: '1.5rem' }}>
-            <h3 style={{ marginBottom: '1rem' }}>Escribe tu Mensaje</h3>
+          <div className="card" style={{ marginBottom: '1.5rem', position: 'relative' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+              <h3 style={{ margin: 0 }}>Escribe tu Mensaje</h3>
+              <button 
+                onClick={() => setShowPicker(!showPicker)} 
+                style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--primary-color)' }}
+                title="Añadir Emoji"
+              >
+                <Smile size={24} />
+              </button>
+            </div>
+            
+            {showPicker && (
+              <div style={{ position: 'absolute', right: '1rem', top: '3.5rem', zIndex: 1000 }}>
+                <EmojiPicker 
+                  theme={Theme.DARK}
+                  onEmojiClick={(emojiObject) => setMessage(prev => prev + emojiObject.emoji)}
+                />
+              </div>
+            )}
+
             <textarea
               value={message}
               onChange={e => setMessage(e.target.value)}

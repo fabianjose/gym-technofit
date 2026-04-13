@@ -68,8 +68,10 @@ export class RoutinesService {
     });
     if (!template) return;
 
-    const startDate = new Date(template.startDate);
-    const endDate = new Date(startDate);
+    const [year, month, day] = template.startDate.toString().split('T')[0].split('-').map(Number);
+    const startDateLocal = new Date(year, month - 1, day, 0, 0, 0);
+    
+    const endDate = new Date(startDateLocal);
     endDate.setMonth(endDate.getMonth() + template.durationMonths);
 
     // 1. Obtener fechas con overrides para no sobreescribirlas
@@ -88,9 +90,8 @@ export class RoutinesService {
     const entriesToSave: CalendarEntry[] = [];
     const exerciseDataMap: Map<number, any[]> = new Map();
 
-    let currentDate = new Date(startDate);
+    let currentDate = new Date(startDateLocal);
     let activeDaysCount = 0;
-    let dayCursor = 0;
 
     // 3. Generar objetos en memoria
     while (currentDate <= endDate) {
@@ -104,11 +105,11 @@ export class RoutinesService {
 
       const dayIndex = (template.skipSaturday || template.skipSunday) ? 
         (activeDaysCount % template.cycleDays) : 
-        (Math.floor(Math.abs(currentDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) % template.cycleDays);
+        (Math.round(Math.abs(currentDate.getTime() - startDateLocal.getTime()) / (1000 * 60 * 60 * 24)) % template.cycleDays);
 
-      const dateString = currentDate.toISOString().split('T')[0];
+      const tzOffsetLoop = currentDate.getTimezoneOffset() * 60000;
+      const dateString = new Date(currentDate.getTime() - tzOffsetLoop).toISOString().split('T')[0];
 
-      // SOLO generar si no hay un override manual para esta fecha
       if (!overrideDates.includes(dateString)) {
         const baseDay = template.days.find(d => d.dayIndex === dayIndex);
         if (baseDay) {
@@ -120,14 +121,16 @@ export class RoutinesService {
             isOverride: false,
             notes: baseDay.notes,
           });
+          
+          const currentIndexToSave = entriesToSave.length;
           entriesToSave.push(entry);
+          
           if (baseDay.exercises && baseDay.exercises.length > 0) {
-            exerciseDataMap.set(dayCursor, baseDay.exercises);
+            exerciseDataMap.set(currentIndexToSave, baseDay.exercises);
           }
         }
       }
       
-      dayCursor++;
       activeDaysCount++;
       currentDate.setDate(currentDate.getDate() + 1);
     }

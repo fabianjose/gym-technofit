@@ -41,6 +41,12 @@ export class Member {
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 
+  @Column({ name: 'default_plan_id', type: 'varchar', length: 36, nullable: true })
+  defaultPlanId?: string;
+
+  @Column({ name: 'default_discount_id', type: 'varchar', length: 36, nullable: true })
+  defaultDiscountId?: string;
+
   @UpdateDateColumn({ name: 'updated_at' })
   updatedAt: Date;
 }

@@ -44,6 +44,14 @@ function FacturacionContent() {
     }
   }, [initialMemberId, members]);
 
+  // Pre-load defaults from member profile
+  useEffect(() => {
+    if (selectedMember) {
+      if (selectedMember.defaultPlanId) setSelectedPlanId(selectedMember.defaultPlanId.toString());
+      if (selectedMember.defaultDiscountId) setSelectedDiscountId(selectedMember.defaultDiscountId.toString());
+    }
+  }, [selectedMember]);
+
   const fetchData = async () => {
     const token = localStorage.getItem('token');
     if (!token) return;

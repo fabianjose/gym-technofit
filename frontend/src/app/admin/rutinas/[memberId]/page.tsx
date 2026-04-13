@@ -46,7 +46,13 @@ export default function RutinaBuilder({ params }: { params: { memberId: string }
 
   const handleAddExercise = (dayIndex: number) => {
     const newDays = [...template.days];
-    newDays[dayIndex].exercises.push({ machineId: machines[0]?.id || 0, sets: 4, reps: '10-12', weight: '', restSeconds: 60, orderIndex: newDays[dayIndex].exercises.length });
+    const categoryFilter = newDays[dayIndex].categoryFilter;
+    let defaultMachine = machines[0];
+    if (categoryFilter) {
+      defaultMachine = machines.find((m: any) => m.category === categoryFilter) || machines[0];
+    }
+    
+    newDays[dayIndex].exercises.push({ machineId: defaultMachine?.id || 0, sets: 4, reps: '10-12', weight: '', restSeconds: 60, orderIndex: newDays[dayIndex].exercises.length });
     setTemplate({ ...template, days: newDays });
   };
 
@@ -130,6 +136,25 @@ export default function RutinaBuilder({ params }: { params: { memberId: string }
               }} style={{ color: 'var(--danger)', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 'bold', fontSize: '1rem', padding: '0.25rem' }} title="Eliminar Día">✖</button>
             </div>
 
+            {/* FILTRO DE CATEGORIA POR DIA */}
+            <div style={{ marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <label style={{ fontSize: '0.75rem', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>Filtrar Máquinas:</label>
+              <select 
+                value={day.categoryFilter || ''} 
+                onChange={e => {
+                  const newDays = [...template.days]; 
+                  newDays[dIndex].categoryFilter = e.target.value; 
+                  setTemplate({...template, days: newDays});
+                }}
+                style={{ flex: 1, padding: '0.25rem', fontSize: '0.75rem', borderRadius: '4px', backgroundColor: 'rgba(255,255,255,0.05)', color: '#fff', border: '1px solid var(--border-color)' }}
+              >
+                <option value="" style={{backgroundColor: '#222', color: '#fff'}}>Todas las máquinas</option>
+                {Array.from(new Set(machines.map(m => m.category).filter(Boolean))).sort().map(cat => (
+                  <option key={cat} value={cat} style={{backgroundColor: '#222', color: '#fff'}}>{cat}</option>
+                ))}
+              </select>
+            </div>
+
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
               {day.exercises?.length > 0 && (
                 <div style={{ display: 'flex', gap: '0.25rem', padding: '0 0.25rem', fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 'bold' }}>
@@ -140,27 +165,43 @@ export default function RutinaBuilder({ params }: { params: { memberId: string }
                   <div style={{ width: '24px' }}></div>
                 </div>
               )}
-              {day.exercises?.map((ex: any, eIndex: number) => (
-                <div key={eIndex} style={{ display: 'flex', gap: '0.25rem', alignItems: 'center', backgroundColor: 'var(--bg-color)', padding: '0.25rem', borderRadius: '4px' }}>
-                  <select value={ex.machineId || ''} onChange={e => {
-                    const newDays = [...template.days]; newDays[dIndex].exercises[eIndex].machineId = +e.target.value; setTemplate({...template, days: newDays});
-                  }} style={{ flex: 1, marginBottom: 0, padding: '0.25rem', fontSize: '0.85rem' }}>
-                    {machines.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
-                  </select>
-                  <input type="number" title="Series" placeholder="Ser." value={ex.sets} onChange={e => {
-                    const newDays = [...template.days]; newDays[dIndex].exercises[eIndex].sets = +e.target.value; setTemplate({...template, days: newDays});
-                  }} style={{ width: '45px', marginBottom: 0, padding: '0.25rem', fontSize: '0.85rem', textAlign: 'center' }} />
-                  <input title="Repeticiones" placeholder="Reps." value={ex.reps} onChange={e => {
-                    const newDays = [...template.days]; newDays[dIndex].exercises[eIndex].reps = e.target.value; setTemplate({...template, days: newDays});
-                  }} style={{ width: '55px', marginBottom: 0, padding: '0.25rem', fontSize: '0.85rem', textAlign: 'center' }} />
-                  <input title="Descanso en segundos" placeholder="Desc. (s)" value={ex.restSeconds} onChange={e => {
-                    const newDays = [...template.days]; newDays[dIndex].exercises[eIndex].restSeconds = e.target.value; setTemplate({...template, days: newDays});
-                  }} style={{ width: '55px', marginBottom: 0, padding: '0.25rem', fontSize: '0.85rem', textAlign: 'center' }} />
-                  <button onClick={() => {
-                    const newDays = [...template.days]; newDays[dIndex].exercises = newDays[dIndex].exercises.filter((_:any, i:number) => i !== eIndex); setTemplate({...template, days: newDays});
-                  }} style={{ color: 'var(--danger)', fontSize: '1rem', background: 'none', border: 'none', cursor: 'pointer', width: '24px' }}>✖</button>
-                </div>
-              ))}
+              {day.exercises?.map((ex: any, eIndex: number) => {
+                const filteredMachines = day.categoryFilter 
+                  ? machines.filter(m => m.category === day.categoryFilter)
+                  : machines;
+                
+                // Si la máquina ya seleccionada no está en el filtro, la añadimos para que no se vea vacío y no se pierda
+                const currentMachine = machines.find(m => m.id === ex.machineId);
+                const options = [...filteredMachines];
+                if (currentMachine && !options.find(m => m.id === currentMachine.id)) {
+                  options.push(currentMachine);
+                }
+
+                return (
+                  <div key={eIndex} style={{ display: 'flex', gap: '0.25rem', alignItems: 'center', backgroundColor: 'var(--bg-color)', padding: '0.25rem', borderRadius: '4px' }}>
+                    <select value={ex.machineId || ''} onChange={e => {
+                      const newDays = [...template.days]; newDays[dIndex].exercises[eIndex].machineId = +e.target.value; setTemplate({...template, days: newDays});
+                    }} style={{ flex: 1, marginBottom: 0, padding: '0.25rem', fontSize: '0.85rem' }}>
+                      <option value="" disabled style={{backgroundColor: '#222', color: '#fff'}}>Seleccione máquina</option>
+                      {options.sort((a,b) => a.name.localeCompare(b.name)).map(m => (
+                        <option key={m.id} value={m.id} style={{backgroundColor: '#222', color: '#fff'}}>{m.category ? `[${m.category}] ` : ''}{m.name}</option>
+                      ))}
+                    </select>
+                    <input type="number" title="Series" placeholder="Ser." value={ex.sets} onChange={e => {
+                      const newDays = [...template.days]; newDays[dIndex].exercises[eIndex].sets = +e.target.value; setTemplate({...template, days: newDays});
+                    }} style={{ width: '45px', marginBottom: 0, padding: '0.25rem', fontSize: '0.85rem', textAlign: 'center' }} />
+                    <input title="Repeticiones" placeholder="Reps." value={ex.reps} onChange={e => {
+                      const newDays = [...template.days]; newDays[dIndex].exercises[eIndex].reps = e.target.value; setTemplate({...template, days: newDays});
+                    }} style={{ width: '55px', marginBottom: 0, padding: '0.25rem', fontSize: '0.85rem', textAlign: 'center' }} />
+                    <input title="Descanso en segundos" placeholder="Desc. (s)" value={ex.restSeconds} onChange={e => {
+                      const newDays = [...template.days]; newDays[dIndex].exercises[eIndex].restSeconds = e.target.value; setTemplate({...template, days: newDays});
+                    }} style={{ width: '55px', marginBottom: 0, padding: '0.25rem', fontSize: '0.85rem', textAlign: 'center' }} />
+                    <button onClick={() => {
+                      const newDays = [...template.days]; newDays[dIndex].exercises = newDays[dIndex].exercises.filter((_:any, i:number) => i !== eIndex); setTemplate({...template, days: newDays});
+                    }} style={{ color: 'var(--danger)', fontSize: '1rem', background: 'none', border: 'none', cursor: 'pointer', width: '24px' }}>✖</button>
+                  </div>
+                );
+              })}
             </div>
             <button onClick={() => handleAddExercise(dIndex)} style={{ marginTop: '0.5rem', fontSize: '0.8rem', color: 'var(--primary-color)', background: 'none', border: '1px solid var(--primary-color)', borderRadius: '16px', padding: '0.2rem 0.6rem', cursor: 'pointer', fontWeight: 'bold', alignSelf: 'flex-start' }}>+ Ejercicio</button>
           </div>

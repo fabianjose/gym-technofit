@@ -7,6 +7,8 @@ import Link from 'next/link';
 
 export default function EjerciciosPage() {
   const [machines, setMachines] = useState<any[]>([]);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('');
   const [selectedVideo, setSelectedVideo] = useState<string | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -20,15 +22,46 @@ export default function EjerciciosPage() {
 
   return (
     <div className="container" style={{ paddingTop: '2rem' }}>
-      <header style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '2rem', flexWrap: 'wrap' }}>
+      <header style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.5rem', flexWrap: 'wrap' }}>
         <Link href="/" className="btn-secondary" style={{ padding: '0.6rem 1rem', borderRadius: '30px', fontSize: '0.9rem', flex: 'none' }}>
           <ArrowLeft size={18} /> Volver
         </Link>
         <h2 className="title" style={{ margin: 0, textAlign: 'left', flex: 1, fontSize: 'clamp(1.2rem, 4vw, 1.8rem)' }}>Catálogo de Ejercicios</h2>
       </header>
+
+      {/* FILTROS */}
+      <div style={{ marginBottom: '2rem', display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+        <div style={{ flex: 1, minWidth: '200px' }}>
+          <input 
+            type="text" 
+            placeholder="Buscar por nombre..." 
+            value={searchTerm} 
+            onChange={e => setSearchTerm(e.target.value)}
+            style={{ padding: '0.8rem 1rem', width: '100%', borderRadius: '8px', backgroundColor: 'var(--panel-bg)', border: '1px solid var(--border-color)', color: '#fff' }}
+          />
+        </div>
+        <div style={{ minWidth: '150px' }}>
+          <select 
+            value={selectedCategory} 
+            onChange={e => setSelectedCategory(e.target.value)}
+            style={{ padding: '0.8rem 1rem', width: '100%', borderRadius: '8px', backgroundColor: 'var(--panel-bg)', border: '1px solid var(--border-color)', color: '#fff' }}
+          >
+            <option value="">Todas las Categorías</option>
+            {Array.from(new Set(machines.map(m => m.category).filter(Boolean))).sort().map(cat => (
+              <option key={cat} value={cat}>{cat}</option>
+            ))}
+          </select>
+        </div>
+      </div>
       
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 200px), 1fr))', gap: '1.5rem' }}>
-        {machines.map(m => (
+        {machines
+          .filter(m => {
+            const matchesSearch = m.name.toLowerCase().includes(searchTerm.toLowerCase());
+            const matchesCategory = !selectedCategory || m.category === selectedCategory;
+            return matchesSearch && matchesCategory;
+          })
+          .map(m => (
           <div key={m.id} className="card" style={{ padding: '1rem', display: 'flex', flexDirection: 'column' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
               <h3 style={{ margin: 0, color: 'var(--primary-color)', fontSize: '1.1rem' }}>{m.name}</h3>

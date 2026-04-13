@@ -57,6 +57,7 @@ export class CronService {
 
     for (const member of members) {
       if (!member.expirationDate) continue;
+      if (!member.active) continue;
 
       const expDate = new Date(member.expirationDate);
       expDate.setHours(0, 0, 0, 0);
@@ -68,55 +69,64 @@ export class CronService {
         if (member.whatsappNumber) {
           await this.whatsappService.send(
             member.whatsappNumber, 
-            `Hola ${member.fullName}, recuerda que tu mensualidad vence en ${diffDays} días. 💪`, 
+            `Hola ${member.fullName}, recuerda que en ${diffDays} día${diffDays > 1 ? 's' : ''} se vence tu membresía. 💪`, 
             member.id
           );
         }
-      } 
-      else if (diffDays === 0) {
-        let msg = `Hola ${member.fullName}, hoy es el último día de tu mensualidad. ¡Te esperamos para renovar!`;
-        if (member.whatsappNumber) await this.whatsappService.send(member.whatsappNumber, msg, member.id);
-        
         for (const phone of owners) {
-          if (phone) await this.whatsappService.send(phone, `INFO: Hoy vence la mensualidad de ${member.fullName}.`, 0);
+          if (phone) await this.whatsappService.send(phone, `INFO: A ${member.fullName} se le vence la membresía en ${diffDays} día${diffDays > 1 ? 's' : ''}.`, 0);
         }
       } 
-      else if (diffDays < 0 && diffDays >= -7) { // Only alert up to 7 days after exp to prevent spam
-        let msg = `Hola ${member.fullName}, tu mensualidad se encuentra vencida. ¡Pasa por el counter para ponerte al día y seguir entrenando!`;
+      else if (diffDays === 0) {
+        let msg = `Hola ${member.fullName}, hoy es el último día de tu membresía. ¡Te esperamos para renovar!`;
         if (member.whatsappNumber) await this.whatsappService.send(member.whatsappNumber, msg, member.id);
         
         for (const phone of owners) {
-          if (phone) await this.whatsappService.send(phone, `ALERTA: Mensualidad vencida de ${member.fullName} C.C: ${member.cedula || 'N/A'}.`, 0);
+          if (phone) await this.whatsappService.send(phone, `INFO: Hoy vence la membresía de ${member.fullName}.`, 0);
+        }
+      } 
+      else if (diffDays < 0 && diffDays >= -15) { // Tope preventivo de 15 días para evitar spam infinito
+        let overdueDays = Math.abs(diffDays);
+        let msg = `Hola ${member.fullName}, tu membresía tiene ${overdueDays} día${overdueDays > 1 ? 's' : ''} de vencid${overdueDays > 1 ? 'os' : 'o'}. ¡Pasa por el counter para ponerte al día y seguir entrenando!`;
+        if (member.whatsappNumber) await this.whatsappService.send(member.whatsappNumber, msg, member.id);
+        
+        for (const phone of owners) {
+          if (phone) await this.whatsappService.send(phone, `ALERTA: ${member.fullName} tiene ${overdueDays} día${overdueDays > 1 ? 's' : ''} de vencid${overdueDays > 1 ? 'os' : 'o'} su membresía. C.C: ${member.cedula || 'N/A'}.`, 0);
         }
       }
     }
   }
 
   private async checkBirthdays(config: any) {
-    this.logger.log('Evaluando cumpleaños...');
+    this.logger.log('Evaluando cumpleaños para mañana...');
     const members = await this.membersService.findAll();
     const emails = config.ownerEmails || [];
     const phones = config.ownerPhones || [];
 
-    const today = new Date();
-    const tMonth = today.getUTCMonth();
-    const tDay = today.getUTCDate();
+    const tomorrow = new Date();
+    tomorrow.setUTCDate(tomorrow.getUTCDate() + 1);
+    
+    const tMonth = tomorrow.getUTCMonth();
+    const tDay = tomorrow.getUTCDate();
+    const tYear = tomorrow.getUTCFullYear();
 
     let birthdayBoys: any[] = [];
 
     for (const member of members) {
       if (!member.birthDate) continue;
+      if (!member.active) continue;
       const bDate = new Date(member.birthDate);
       if (bDate.getUTCMonth() === tMonth && bDate.getUTCDate() === tDay) {
-        birthdayBoys.push(member);
+        const age = tYear - bDate.getUTCFullYear();
+        birthdayBoys.push({ ...member, age });
       }
     }
 
     if (birthdayBoys.length > 0) {
-      const names = birthdayBoys.map((b: any) => b.fullName).join(', ');
-      const msg = `🎉 Hoy están de cumpleaños: ${names}`;
+      const details = birthdayBoys.map((b: any) => `${b.fullName} (${b.age} años)`).join(', ');
+      const msg = `🔔 RECORDATORIO: Mañana están de cumpleaños: ${details}. Prepárate para felicitarlos! 🎂`;
       
-      this.logger.log(`Enviando notificación de Cumpleaños a Dueños`);
+      this.logger.log(`Enviando notificación de Cumpleaños (mañana) a Dueños`);
       for (const phone of phones) {
         if (phone) await this.whatsappService.send(phone, msg, 0);
       }
@@ -129,15 +139,13 @@ export class CronService {
              await mailer.sendMail({
                 from: config.smtpFrom || config.smtpUser || '"GymFlow Alerts" <no-reply@gym.com>',
                 to: emails.join(', '),
-                subject: '🎂 ¡Hoy hay Cumpleaños en el Gimnasio!',
-                html: `<h3>Cumpleañeros del Día</h3><p>${names}</p><p>Puedes aprovechar para enviarles una felicitación especial o darles una promoción por su vuelta al Sol.</p>`
+                subject: '🎂 ¡Mañana hay Cumpleaños en el Gimnasio!',
+                html: `<h3>Cumpleañeros de Mañana</h3><p>${details}</p><p>Mañana es un día especial. Puedes aprovechar para preparar una felicitación o promoción.</p>`
              });
              this.logger.log(`Correo de cumpleaños enviado exitosamente a ${emails.length} destinatarios.`);
           } catch(e) {
              this.logger.error('Error enviando correo SMTP de cumpleaños', e);
           }
-        } else {
-             this.logger.warn('No hay configuración SMTP disponible para enviar correos de cumpleaños.');
         }
       }
     }
