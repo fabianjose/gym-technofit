@@ -1,12 +1,14 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { AdminsService } from './admins/admins.service';
+import { TypeOrmExceptionFilter } from './typeorm-exception.filter';
 
 import { urlencoded, json } from 'express';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   app.enableCors();
+  app.useGlobalFilters(new TypeOrmExceptionFilter());
   
   app.use(json({ limit: '50mb' }));
   app.use(urlencoded({ extended: true, limit: '50mb' }));

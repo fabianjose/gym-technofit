@@ -126,15 +126,22 @@ export default function MiembrosPage() {
       } else {
         const created = await axios.post('/api/members', data, { headers });
         // Emit first invoice if requested
-        if (emitInvoice && invoiceForm.planId && invoiceForm.amountTotal) {
+        if (emitInvoice && form.defaultPlanId) {
+          const plan = plans.find((p: any) => p.id === form.defaultPlanId);
+          const disc = form.defaultDiscountId ? discounts.find((d: any) => d.id === form.defaultDiscountId) : null;
+          const basePrice = plan ? Number(plan.price) : 0;
+          const finalPrice = disc ? basePrice * (1 - disc.percentage / 100) : basePrice;
+
           await axios.post('/api/invoices', {
             memberId: created.data.id,
-            planId: invoiceForm.planId,
-            discountId: invoiceForm.discountId || undefined,
-            amountTotal: Math.round(Number(invoiceForm.amountTotal)),
+            planId: form.defaultPlanId,
+            discountId: form.defaultDiscountId || undefined,
+            amountTotal: Math.round(finalPrice),
             paymentMethod: invoiceForm.paymentMethod,
           }, { headers });
           showSuccess('¡Miembro registrado y primera factura emitida!');
+        } else if (emitInvoice && !form.defaultPlanId) {
+           showError('Se guardó el miembro, pero para emitir factura debiste seleccionar un Plan Predeterminado.');
         } else {
           showSuccess('Miembro agregado exitosamente');
         }
@@ -382,44 +389,10 @@ export default function MiembrosPage() {
                   </label>
 
                   {emitInvoice && (
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', backgroundColor: 'rgba(255,255,255,0.03)', padding: '1rem', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
-                      <div style={{ gridColumn: '1 / -1' }}>
-                        <label style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Plan de Suscripción *</label>
-                        <select
-                          value={invoiceForm.planId}
-                          required={emitInvoice}
-                          onChange={e => {
-                            const p = plans.find((pl: any) => pl.id === e.target.value);
-                            setInvoiceForm({ ...invoiceForm, planId: e.target.value, amountTotal: p ? p.price.toString() : '' });
-                          }}
-                          style={{ marginBottom: 0, width: '100%', padding: '0.75rem', backgroundColor: 'var(--bg-color)', borderRadius: '8px', border: '1px solid var(--border-color)', color: '#fff' }}
-                        >
-                          <option value="">— Seleccionar plan —</option>
-                          {plans.map((p: any) => (
-                            <option key={p.id} value={p.id}>{p.name} — ${Number(p.price).toLocaleString()} COP</option>
-                          ))}
-                        </select>
-                      </div>
-
-                      <div>
-                        <label style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Descuento (opcional)</label>
-                        <select
-                          value={invoiceForm.discountId}
-                          onChange={e => {
-                            const disc = discounts.find((d: any) => d.id === e.target.value);
-                            const basePrice = invoiceForm.planId ? Number(plans.find((p:any) => p.id === invoiceForm.planId)?.price || 0) : 0;
-                            const finalPrice = disc ? basePrice * (1 - disc.percentage / 100) : basePrice;
-                            setInvoiceForm({ ...invoiceForm, discountId: e.target.value, amountTotal: finalPrice ? Math.round(finalPrice).toString() : invoiceForm.amountTotal });
-                          }}
-                          style={{ marginBottom: 0, width: '100%', padding: '0.75rem', backgroundColor: 'var(--bg-color)', borderRadius: '8px', border: '1px solid var(--border-color)', color: '#fff' }}
-                        >
-                          <option value="">— Sin descuento —</option>
-                          {discounts.map((d: any) => (
-                            <option key={d.id} value={d.id}>{d.name} ({d.percentage}%)</option>
-                          ))}
-                        </select>
-                      </div>
-
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '1rem', backgroundColor: 'rgba(255,255,255,0.03)', padding: '1rem', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
+                      <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', margin: 0 }}>
+                         La factura se va a emitir utilizando el <strong>Plan y Descuento Predeterminados</strong> seleccionados en la sección de arriba. Si no has seleccionado ningún plan arriba, la factura no procederá.
+                      </p>
                       <div>
                         <label style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Método de Pago *</label>
                         <select
@@ -431,18 +404,6 @@ export default function MiembrosPage() {
                             <option key={pm.id} value={pm.name}>{pm.name}</option>
                           ))}
                         </select>
-                      </div>
-
-                      <div style={{ gridColumn: '1 / -1' }}>
-                        <label style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Total a Cobrar (COP) *</label>
-                        <input
-                          type="number"
-                          value={invoiceForm.amountTotal}
-                          onChange={e => setInvoiceForm({ ...invoiceForm, amountTotal: e.target.value })}
-                          required={emitInvoice}
-                          placeholder="Se calcula automáticamente del plan"
-                          style={{ marginBottom: 0, width: '100%', padding: '0.75rem', backgroundColor: 'var(--bg-color)', borderRadius: '8px', border: '1px solid var(--primary-color)', color: '#fff' }}
-                        />
                       </div>
                     </div>
                   )}

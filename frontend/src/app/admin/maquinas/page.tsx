@@ -9,6 +9,10 @@ export default function MaquinasPage() {
   const [categories, setCategories] = useState([]);
   const [form, setForm] = useState<any>({ name: '', description: '', category: 'General', showInPublic: true });
   const [loadingMsg, setLoadingMsg] = useState('');
+  
+  // Filtros
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filterCat, setFilterCat] = useState('');
 
   useEffect(() => {
     fetchMachines();
@@ -54,15 +58,38 @@ export default function MaquinasPage() {
   };
 
   return (
-    <div style={{ display: 'flex', gap: '3rem', alignItems: 'flex-start', flexWrap: 'wrap-reverse', maxWidth: '1200px', margin: '0 auto' }}>
+    <div style={{ display: 'flex', gap: '3rem', alignItems: 'flex-start', flexWrap: 'wrap', maxWidth: '1200px', margin: '0 auto' }}>
       <div style={{ flex: '1', minWidth: '350px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
           <h2 className="title" style={{ textAlign: 'left', fontSize: '1.8rem', margin: 0 }}>Gestión de Máquinas</h2>
           {loadingMsg && <span style={{ color: 'var(--primary-color)', fontSize: '0.9rem', fontWeight: 'bold' }}>{loadingMsg}</span>}
         </div>
+
+        <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem', flexWrap: 'wrap' }}>
+          <input 
+            type="text" 
+            placeholder="Buscar por nombre..." 
+            value={searchQuery}
+            onChange={e => setSearchQuery(e.target.value)}
+            style={{ padding: '0.75rem', flex: 1, minWidth: '200px', backgroundColor: 'var(--panel-bg)', border: '1px solid var(--border-color)', borderRadius: '8px', color: '#fff' }}
+          />
+          <select 
+            value={filterCat} 
+            onChange={e => setFilterCat(e.target.value)}
+            style={{ padding: '0.75rem', minWidth: '180px', backgroundColor: 'var(--panel-bg)', border: '1px solid var(--border-color)', borderRadius: '8px', color: '#fff' }}
+          >
+            <option value="">Todas las categorías</option>
+            {categories.map((c: any) => (
+              <option key={c.id} value={c.name}>{c.name}</option>
+            ))}
+          </select>
+        </div>
         
         <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '1.2rem' }}>
-          {machines.map((m: any) => (
+          {machines
+            .filter((m: any) => m.name.toLowerCase().includes(searchQuery.toLowerCase()))
+            .filter((m: any) => filterCat ? (m.category?.name || m.category) === filterCat : true)
+            .map((m: any) => (
             <div key={m.id} className="card" style={{ display: 'flex', flexDirection: 'row', gap: '1.5rem', alignItems: 'center', padding: '1.2rem', backgroundColor: 'var(--bg-color)', borderLeft: `4px solid ${m.showInPublic ? 'var(--primary-color)' : 'var(--text-muted)'}` }}>
               {m.photoUrl ? (
                 <img src={`${m.photoUrl}`} alt={m.name} style={{ width: '80px', height: '80px', objectFit: 'cover', borderRadius: '8px', border: '1px solid var(--border-color)' }} />
@@ -150,7 +177,7 @@ export default function MaquinasPage() {
         </div>
       </div>
 
-      <div className="card" style={{ width: '100%', maxWidth: '350px', position: 'sticky', top: '2rem', padding: '2rem' }}>
+      <div className="card" style={{ width: '100%', maxWidth: '350px', padding: '2rem', position: 'sticky', top: '5rem', alignSelf: 'flex-start', maxHeight: 'calc(100vh - 6rem)', overflowY: 'auto' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.5rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '1rem' }}>
           <div style={{ backgroundColor: 'var(--primary-color)', padding: '0.5rem', borderRadius: '8px', display: 'flex' }}>
             <ImageIcon size={20} color="#000" />
