@@ -2,7 +2,7 @@
 "use client";
 import { useEffect, useState } from 'react';
 import axios from 'axios';
-import { Camera, Video, Image as ImageIcon, CheckCircle, Tag, Edit2 } from 'lucide-react';
+import { Camera, Video, Image as ImageIcon, CheckCircle, Tag, Edit2, Folder, ArrowLeft } from 'lucide-react';
 
 export default function MaquinasPage() {
   const [machines, setMachines] = useState([]);
@@ -12,7 +12,7 @@ export default function MaquinasPage() {
   
   // Filtros
   const [searchQuery, setSearchQuery] = useState('');
-  const [filterCat, setFilterCat] = useState('');
+  const [activeCat, setActiveCat] = useState<string | null>(null);
 
   useEffect(() => {
     fetchMachines();
@@ -57,126 +57,184 @@ export default function MaquinasPage() {
     }
   };
 
+  // Preprocesamiento para agrupación
+  const processedMachines = machines.map((m: any) => ({
+    ...m,
+    catName: m.category?.name || m.category || 'General'
+  }));
+
+  const filteredMachines = processedMachines.filter((m: any) => m.name.toLowerCase().includes(searchQuery.toLowerCase()));
+
+  const grouped = processedMachines.reduce((acc: any, m: any) => {
+    const c = m.catName;
+    if (!acc[c]) acc[c] = [];
+    acc[c].push(m);
+    return acc;
+  }, {});
+
+  const sortedCategories = Object.keys(grouped).sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
+  const isSearching = searchQuery.trim().length > 0;
+
   return (
     <div style={{ display: 'flex', gap: '3rem', alignItems: 'flex-start', flexWrap: 'wrap', maxWidth: '1200px', margin: '0 auto' }}>
+      
+      {/* SECCIÓN IZQUIERDA: TARJETAS O LISTA */}
       <div style={{ flex: '1', minWidth: '350px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
           <h2 className="title" style={{ textAlign: 'left', fontSize: '1.8rem', margin: 0 }}>Gestión de Máquinas</h2>
           {loadingMsg && <span style={{ color: 'var(--primary-color)', fontSize: '0.9rem', fontWeight: 'bold' }}>{loadingMsg}</span>}
         </div>
 
-        <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem', flexWrap: 'wrap' }}>
+        {/* BUSCADOR */}
+        <div style={{ display: 'flex', gap: '1rem', marginBottom: '2rem' }}>
           <input 
             type="text" 
-            placeholder="Buscar por nombre..." 
+            placeholder="Buscar ejercicio por nombre directamente..." 
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
-            style={{ padding: '0.75rem', flex: 1, minWidth: '200px', backgroundColor: 'var(--panel-bg)', border: '1px solid var(--border-color)', borderRadius: '8px', color: '#fff' }}
+            style={{ padding: '0.8rem 1rem', width: '100%', backgroundColor: 'var(--panel-bg)', border: '1px solid var(--border-color)', borderRadius: '8px', color: '#fff' }}
           />
-          <select 
-            value={filterCat} 
-            onChange={e => setFilterCat(e.target.value)}
-            style={{ padding: '0.75rem', minWidth: '180px', backgroundColor: 'var(--panel-bg)', border: '1px solid var(--border-color)', borderRadius: '8px', color: '#fff' }}
-          >
-            <option value="">Todas las categorías</option>
-            {categories.map((c: any) => (
-              <option key={c.id} value={c.name}>{c.name}</option>
-            ))}
-          </select>
         </div>
         
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '1.2rem' }}>
-          {machines
-            .filter((m: any) => m.name.toLowerCase().includes(searchQuery.toLowerCase()))
-            .filter((m: any) => filterCat ? (m.category?.name || m.category) === filterCat : true)
-            .map((m: any) => (
-            <div key={m.id} className="card" style={{ display: 'flex', flexDirection: 'row', gap: '1.5rem', alignItems: 'center', padding: '1.2rem', backgroundColor: 'var(--bg-color)', borderLeft: `4px solid ${m.showInPublic ? 'var(--primary-color)' : 'var(--text-muted)'}` }}>
-              {m.photoUrl ? (
-                <img src={`${m.photoUrl}`} alt={m.name} style={{ width: '80px', height: '80px', objectFit: 'cover', borderRadius: '8px', border: '1px solid var(--border-color)' }} />
-              ) : m.videoUrl ? (
-                <video src={`${m.videoUrl}`} style={{ width: '80px', height: '80px', objectFit: 'cover', borderRadius: '8px', border: '1px solid var(--border-color)' }} muted loop playsInline autoPlay />
-              ) : (
-                <div style={{ width: '80px', height: '80px', backgroundColor: 'var(--panel-bg)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)', border: '1px dashed var(--border-color)' }}>
-                  <ImageIcon size={24} />
+        {/* CARPETAS / GROUPS */}
+        {!isSearching && activeCat === null && (
+          <>
+            <h3 style={{ marginBottom: '1rem', color: 'var(--text-muted)' }}>Explorar por Grupo Muscular</h3>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '1rem' }}>
+              {sortedCategories.map(cat => (
+                <div 
+                  key={cat} 
+                  onClick={() => setActiveCat(cat)}
+                  className="card hover-lift"
+                  style={{ 
+                    display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', 
+                    padding: '2rem 1rem', cursor: 'pointer', textAlign: 'center',
+                    backgroundColor: 'var(--panel-bg)', border: '1px solid var(--border-color)', borderRadius: '16px',
+                    transition: 'transform 0.2s, border-color 0.2s'
+                  }}
+                  onMouseOver={e => e.currentTarget.style.borderColor = 'var(--primary-color)'}
+                  onMouseOut={e => e.currentTarget.style.borderColor = 'var(--border-color)'}
+                >
+                  <Folder size={40} color="var(--primary-color)" style={{ marginBottom: '1rem' }} />
+                  <h3 style={{ margin: 0, fontSize: '1.1rem', color: '#fff' }}>{cat}</h3>
+                  <span style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginTop: '0.5rem' }}>{grouped[cat].length} ejercicios</span>
                 </div>
-              )}
-              <div style={{ flex: 1 }}>
-                <h4 style={{ margin: '0 0 0.5rem 0', fontSize: '1.1rem', color: '#fff' }}>{m.name}</h4>
-                <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-                  <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
-                    <Tag size={14} color="var(--primary-color)"/> {m.category?.name || m.category}
-                  </span>
-                  <span style={{ fontSize: '0.75rem', padding: '0.2rem 0.5rem', borderRadius: '4px', backgroundColor: m.showInPublic ? 'rgba(0, 210, 138, 0.1)' : 'rgba(255,255,255,0.1)', color: m.showInPublic ? 'var(--primary-color)' : 'var(--text-muted)' }}>
-                    {m.showInPublic ? 'Público' : 'Oculto'}
-                  </span>
-                </div>
-              </div>
-
-              <div style={{ display: 'flex', gap: '1rem' }}>
-                {/* Botón Subir Foto */}
-                <label style={{ 
-                  display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.4rem', cursor: 'pointer', 
-                  backgroundColor: 'rgba(0,0,0,0.2)', padding: '0.6rem', borderRadius: '12px', width: '70px',
-                  border: m.photoUrl ? '1px solid var(--success)' : '1px dashed var(--border-color)',
-                  transition: 'all 0.2s ease'
-                }} className="hover-lift">
-                  <div style={{ 
-                    backgroundColor: m.photoUrl ? 'var(--success)' : 'var(--panel-bg)',
-                    color: m.photoUrl ? '#000' : 'var(--text-muted)',
-                    padding: '0.4rem', borderRadius: '50%', display: 'flex' 
-                  }}>
-                    <Camera size={18} />
-                  </div>
-                  <span style={{ fontSize: '0.7rem', color: m.photoUrl ? 'var(--success)' : 'var(--text-light)', fontWeight: 'bold' }}>
-                    FOTO
-                  </span>
-                  <input type="file" accept="image/*" onChange={e => { if(e.target.files && e.target.files[0]) handleUpload(m.id, e.target.files[0], 'photo') }} style={{ display: 'none' }} />
-                </label>
-
-                {/* Botón Subir Video */}
-                <label style={{ 
-                  display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.4rem', cursor: 'pointer', 
-                  backgroundColor: 'rgba(0,0,0,0.2)', padding: '0.6rem', borderRadius: '12px', width: '70px',
-                  border: m.videoUrl ? '1px solid var(--primary-color)' : '1px dashed var(--border-color)',
-                  transition: 'all 0.2s ease'
-                }} className="hover-lift">
-                  <div style={{ 
-                    backgroundColor: m.videoUrl ? 'var(--primary-color)' : 'var(--panel-bg)',
-                    color: m.videoUrl ? '#000' : 'var(--text-muted)',
-                    padding: '0.4rem', borderRadius: '50%', display: 'flex' 
-                  }}>
-                    <Video size={18} />
-                  </div>
-                  <span style={{ fontSize: '0.7rem', color: m.videoUrl ? 'var(--primary-color)' : 'var(--text-light)', fontWeight: 'bold' }}>
-                    VIDEO
-                  </span>
-                  <input type="file" accept="video/mp4,video/webm" onChange={e => { if(e.target.files && e.target.files[0]) handleUpload(m.id, e.target.files[0], 'video') }} style={{ display: 'none' }} />
-                </label>
-
-                {/* Botón Editar */}
-                <button onClick={() => setForm(m)} style={{ 
-                  display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.4rem', cursor: 'pointer', 
-                  backgroundColor: 'rgba(0,0,0,0.2)', padding: '0.6rem', borderRadius: '12px', width: '70px',
-                  border: '1px solid var(--primary-color)',
-                  transition: 'all 0.2s ease'
-                }} className="hover-lift">
-                  <div style={{ 
-                    backgroundColor: 'var(--primary-color)',
-                    color: '#000',
-                    padding: '0.4rem', borderRadius: '50%', display: 'flex' 
-                  }}>
-                    <Edit2 size={18} />
-                  </div>
-                  <span style={{ fontSize: '0.7rem', color: 'var(--primary-color)', fontWeight: 'bold' }}>
-                    EDITAR
-                  </span>
-                </button>
-              </div>
+              ))}
             </div>
-          ))}
-        </div>
+          </>
+        )}
+
+        {/* SUB-HEADER AL ESTAR DENTRO DE UNA CARPETA */}
+        {(!isSearching && activeCat !== null) && (
+          <div style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '1rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '1rem' }}>
+            <button 
+              onClick={() => setActiveCat(null)} 
+              className="btn-secondary" 
+              style={{ background: 'var(--bg-color)', border: '1px solid var(--border-color)', padding: '0.5rem 1rem', fontSize: '0.9rem' }}
+            >
+              <ArrowLeft size={16} /> Volver a Grupos
+            </button>
+            <h3 style={{ margin: 0, color: 'var(--primary-color)' }}>{activeCat}</h3>
+          </div>
+        )}
+
+        {/* LISTADO DE MÁQUINAS (Resultados de búsqueda o carpeta activa) */}
+        {(isSearching || activeCat !== null) && (
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '1.2rem' }}>
+            {isSearching && filteredMachines.length === 0 && (
+              <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' }}>No se encontraron coincidencias.</div>
+            )}
+            
+            {(isSearching ? filteredMachines : (activeCat ? grouped[activeCat] : []) || []).map((m: any) => (
+              <div key={m.id} className="card" style={{ display: 'flex', flexDirection: 'row', gap: '1.5rem', alignItems: 'center', padding: '1.2rem', backgroundColor: 'var(--bg-color)', borderLeft: `4px solid ${m.showInPublic ? 'var(--primary-color)' : 'var(--text-muted)'}` }}>
+                {m.photoUrl ? (
+                  <img src={`${m.photoUrl}`} alt={m.name} style={{ width: '80px', height: '80px', objectFit: 'cover', borderRadius: '8px', border: '1px solid var(--border-color)' }} />
+                ) : m.videoUrl ? (
+                  <video src={`${m.videoUrl}`} style={{ width: '80px', height: '80px', objectFit: 'cover', borderRadius: '8px', border: '1px solid var(--border-color)' }} muted loop playsInline autoPlay />
+                ) : (
+                  <div style={{ width: '80px', height: '80px', backgroundColor: 'var(--panel-bg)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)', border: '1px dashed var(--border-color)' }}>
+                    <ImageIcon size={24} />
+                  </div>
+                )}
+                <div style={{ flex: 1 }}>
+                  <h4 style={{ margin: '0 0 0.5rem 0', fontSize: '1.1rem', color: '#fff' }}>{m.name}</h4>
+                  <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', flexWrap: 'wrap' }}>
+                    <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
+                      <Tag size={14} color="var(--primary-color)"/> {m.catName}
+                    </span>
+                    <span style={{ fontSize: '0.75rem', padding: '0.2rem 0.5rem', borderRadius: '4px', backgroundColor: m.showInPublic ? 'rgba(0, 210, 138, 0.1)' : 'rgba(255,255,255,0.1)', color: m.showInPublic ? 'var(--primary-color)' : 'var(--text-muted)' }}>
+                      {m.showInPublic ? 'Público' : 'Oculto'}
+                    </span>
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+                  {/* Botón Subir Foto */}
+                  <label style={{ 
+                    display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.4rem', cursor: 'pointer', 
+                    backgroundColor: 'rgba(0,0,0,0.2)', padding: '0.6rem', borderRadius: '12px', width: '70px',
+                    border: m.photoUrl ? '1px solid var(--success)' : '1px dashed var(--border-color)',
+                    transition: 'all 0.2s ease'
+                  }} className="hover-lift">
+                    <div style={{ 
+                      backgroundColor: m.photoUrl ? 'var(--success)' : 'var(--panel-bg)',
+                      color: m.photoUrl ? '#000' : 'var(--text-muted)',
+                      padding: '0.4rem', borderRadius: '50%', display: 'flex' 
+                    }}>
+                      <Camera size={18} />
+                    </div>
+                    <span style={{ fontSize: '0.7rem', color: m.photoUrl ? 'var(--success)' : 'var(--text-light)', fontWeight: 'bold' }}>
+                      FOTO
+                    </span>
+                    <input type="file" accept="image/*" onChange={e => { if(e.target.files && e.target.files[0]) handleUpload(m.id, e.target.files[0], 'photo') }} style={{ display: 'none' }} />
+                  </label>
+
+                  {/* Botón Subir Video */}
+                  <label style={{ 
+                    display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.4rem', cursor: 'pointer', 
+                    backgroundColor: 'rgba(0,0,0,0.2)', padding: '0.6rem', borderRadius: '12px', width: '70px',
+                    border: m.videoUrl ? '1px solid var(--primary-color)' : '1px dashed var(--border-color)',
+                    transition: 'all 0.2s ease'
+                  }} className="hover-lift">
+                    <div style={{ 
+                      backgroundColor: m.videoUrl ? 'var(--primary-color)' : 'var(--panel-bg)',
+                      color: m.videoUrl ? '#000' : 'var(--text-muted)',
+                      padding: '0.4rem', borderRadius: '50%', display: 'flex' 
+                    }}>
+                      <Video size={18} />
+                    </div>
+                    <span style={{ fontSize: '0.7rem', color: m.videoUrl ? 'var(--primary-color)' : 'var(--text-light)', fontWeight: 'bold' }}>
+                      VIDEO
+                    </span>
+                    <input type="file" accept="video/mp4,video/webm" onChange={e => { if(e.target.files && e.target.files[0]) handleUpload(m.id, e.target.files[0], 'video') }} style={{ display: 'none' }} />
+                  </label>
+
+                  {/* Botón Editar */}
+                  <button onClick={() => setForm(m)} style={{ 
+                    display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.4rem', cursor: 'pointer', 
+                    backgroundColor: 'rgba(0,0,0,0.2)', padding: '0.6rem', borderRadius: '12px', width: '70px',
+                    border: '1px solid var(--primary-color)',
+                    transition: 'all 0.2s ease'
+                  }} className="hover-lift">
+                    <div style={{ 
+                      backgroundColor: 'var(--primary-color)',
+                      color: '#000',
+                      padding: '0.4rem', borderRadius: '50%', display: 'flex' 
+                    }}>
+                      <Edit2 size={18} />
+                    </div>
+                    <span style={{ fontSize: '0.7rem', color: 'var(--primary-color)', fontWeight: 'bold' }}>
+                      EDITAR
+                    </span>
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
+      {/* SECCIÓN DERECHA: FORMULARIO STICKY */}
       <div className="card" style={{ width: '100%', maxWidth: '350px', padding: '2rem', position: 'sticky', top: '5rem', alignSelf: 'flex-start', maxHeight: 'calc(100vh - 6rem)', overflowY: 'auto' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.5rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '1rem' }}>
           <div style={{ backgroundColor: 'var(--primary-color)', padding: '0.5rem', borderRadius: '8px', display: 'flex' }}>

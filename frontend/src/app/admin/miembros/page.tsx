@@ -29,6 +29,10 @@ export default function MiembrosPage() {
     expirationDate: '',
     defaultPlanId: '',
     defaultDiscountId: '',
+    address: '',
+    rh: '',
+    emergencyContact: '',
+    observations: '',
     active: true
   });
 
@@ -110,6 +114,10 @@ export default function MiembrosPage() {
       registrationDate: form.registrationDate || null,
       // expirationDate la calcula el backend desde registrationDate
       expirationDate: undefined,
+      address: form.address || null,
+      rh: form.rh || null,
+      emergencyContact: form.emergencyContact || null,
+      observations: form.observations || null,
       active: form.active,
       measurements
     };
@@ -186,6 +194,10 @@ export default function MiembrosPage() {
       expirationDate: extractDateStr(m.expirationDate),
       defaultPlanId: m.defaultPlanId?.toString() || '',
       defaultDiscountId: m.defaultDiscountId?.toString() || '',
+      address: m.address || '',
+      rh: m.rh || '',
+      emergencyContact: m.emergencyContact || '',
+      observations: m.observations || '',
       active: m.active ?? true
     });
     setMeasurements({
@@ -204,7 +216,7 @@ export default function MiembrosPage() {
     setEditingId(null);
     setEmitInvoice(false);
     setInvoiceForm({ planId: '', discountId: '', paymentMethod: 'Efectivo', amountTotal: '' });
-    setForm({ cedula: '', fullName: '', email: '', whatsappNumber: '+57', notifyTime: '07:00', birthDate: '', registrationDate: new Date().toISOString().split('T')[0], expirationDate: '', defaultPlanId: '', defaultDiscountId: '', active: true });
+    setForm({ cedula: '', fullName: '', email: '', whatsappNumber: '+57', notifyTime: '07:00', birthDate: '', registrationDate: new Date().toISOString().split('T')[0], expirationDate: '', defaultPlanId: '', defaultDiscountId: '', address: '', rh: '', emergencyContact: '', observations: '', active: true });
     setMeasurements({ peso: '', altura: '', pecho: '', brazos: '', cintura: '', piernas: '' });
     setActiveTab('personal');
     setShowModal(false);
@@ -311,7 +323,31 @@ export default function MiembrosPage() {
                   </div>
 
                   <div style={{ gridColumn: '1 / -1', marginTop: '1rem', borderTop: '1px solid var(--border-color)', paddingTop: '1rem' }}>
-                    <label style={{ fontSize: '0.9rem', color: 'var(--primary-color)', fontWeight: 'bold' }}>Plan y Descuento por Defecto (Para facturas futuras)</label>
+                    <label style={{ fontSize: '0.9rem', color: 'var(--primary-color)', fontWeight: 'bold' }}>Información Adicional (Opcional)</label>
+                  </div>
+
+                  <div>
+                    <label style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Dirección</label>
+                    <input value={form.address} onChange={e => setForm({...form, address: e.target.value})} placeholder="Ej: Calle 123 #45-67..." style={{ marginBottom: 0, padding: '0.75rem', backgroundColor: 'var(--bg-color)', borderRadius: '8px', border: '1px solid var(--border-color)', color: '#fff', width: '100%' }} />
+                  </div>
+
+                  <div>
+                    <label style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Tipo de Sangre (RH)</label>
+                    <input value={form.rh} onChange={e => setForm({...form, rh: e.target.value})} placeholder="Ej: O+" maxLength={10} style={{ marginBottom: 0, padding: '0.75rem', backgroundColor: 'var(--bg-color)', borderRadius: '8px', border: '1px solid var(--border-color)', color: '#fff', width: '100%' }} />
+                  </div>
+
+                  <div style={{ gridColumn: '1 / -1' }}>
+                    <label style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Contacto de Emergencia</label>
+                    <input value={form.emergencyContact} onChange={e => setForm({...form, emergencyContact: e.target.value})} placeholder="Ej: Esposa - María Lopez 3001234567" style={{ marginBottom: 0, padding: '0.75rem', backgroundColor: 'var(--bg-color)', borderRadius: '8px', border: '1px solid var(--border-color)', color: '#fff', width: '100%' }} />
+                  </div>
+
+                  <div style={{ gridColumn: '1 / -1' }}>
+                    <label style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Observaciones Generales</label>
+                    <textarea value={form.observations} onChange={e => setForm({...form, observations: e.target.value})} rows={2} placeholder="Condiciones médicas, lesiones, notas administrativas..." style={{ marginBottom: 0, padding: '0.75rem', backgroundColor: 'var(--bg-color)', borderRadius: '8px', border: '1px solid var(--border-color)', color: '#fff', width: '100%', resize: 'vertical' }} />
+                  </div>
+
+                  <div style={{ gridColumn: '1 / -1', marginTop: '1rem', borderTop: '1px solid var(--border-color)', paddingTop: '1rem' }}>
+                    <label style={{ fontSize: '0.9rem', color: 'var(--primary-color)', fontWeight: 'bold' }}>Suscripción Financiera Predeterminada</label>
                   </div>
 
                   <div>

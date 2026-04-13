@@ -35,6 +35,18 @@ export class Member {
   @Column({ name: 'expiration_date', type: 'date', nullable: true })
   expirationDate: string;
 
+  @Column({ type: 'varchar', length: 255, nullable: true })
+  address: string;
+
+  @Column({ type: 'varchar', length: 10, nullable: true })
+  rh: string;
+
+  @Column({ name: 'emergency_contact', type: 'varchar', length: 150, nullable: true })
+  emergencyContact: string;
+
+  @Column({ type: 'text', nullable: true })
+  observations: string;
+
   @Column({ type: 'json', nullable: true })
   measurements: Record<string, any>;
 
