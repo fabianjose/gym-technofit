@@ -5,8 +5,16 @@ import { MachinesService } from './machines.service';
 import { diskStorage } from 'multer';
 import { extname, join } from 'path';
 
+import { existsSync, mkdirSync } from 'fs';
+
 const storage = (folder: string) => diskStorage({
-  destination: join(__dirname, '..', '..', 'uploads', 'machines', folder),
+  destination: (req, file, cb) => {
+    const dest = join(__dirname, '..', '..', 'uploads', 'machines', folder);
+    if (!existsSync(dest)) {
+      mkdirSync(dest, { recursive: true });
+    }
+    cb(null, dest);
+  },
   filename: (req, file, cb) => {
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
     cb(null, `${uniqueSuffix}${extname(file.originalname)}`);
@@ -57,6 +65,12 @@ export class MachinesController {
   @Post(':id/video')
   @UseInterceptors(FileInterceptor('file', { storage: storage('videos') }))
   uploadVideo(@Param('id') id: string, @UploadedFile() file: any) {
+    console.log(`[MachinesController] Recibiendo video para la máquina ${id}. Archivo:`, file ? file.filename : 'Ninguno');
+    if (!file) {
+      console.error(`[MachinesController] Error: multer no detectó ningún archivo de video.`);
+    } else {
+      console.log(`[MachinesController] Tamaño del video: ${(file.size / 1024 / 1024).toFixed(2)} MB`);
+    }
     const url = `/uploads/machines/videos/${file.filename}`;
     return this.machinesService.updateVideo(+id, url);
   }
