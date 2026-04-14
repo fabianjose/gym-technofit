@@ -10,7 +10,7 @@ DATE=$(date +"%Y-%m-%d_%H-%M-%S")
 FILE_NAME="gymflow_backup_$DATE.sql"
 
 echo "Generando backup de la base de datos MySQL (GymFlow)..."
-docker exec gym_db mysqldump -u gymuser -pgympassword gymflow > "$BACKUP_DIR/$FILE_NAME"
+docker exec gym_db mysqldump --no-tablespaces -u gymuser -pgympassword gymflow > "$BACKUP_DIR/$FILE_NAME"
 echo "Backup guardado exitosamente en: $BACKUP_DIR/$FILE_NAME"
 
 echo "Limpiando backups anteriores a 7 días para ahorrar espacio en el servidor..."
