@@ -56,43 +56,47 @@ export class CronService {
     today.setHours(0, 0, 0, 0);
 
     for (const member of members) {
-      if (!member.expirationDate) continue;
-      if (!member.active) continue;
+      try {
+        if (!member.expirationDate) continue;
+        if (!member.active) continue;
 
-      const expDate = new Date(member.expirationDate);
-      expDate.setHours(0, 0, 0, 0);
-      
-      const diffTime = expDate.getTime() - today.getTime();
-      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        const expDate = new Date(member.expirationDate);
+        expDate.setHours(0, 0, 0, 0);
+        
+        const diffTime = expDate.getTime() - today.getTime();
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
-      if (diffDays > 0 && diffDays <= 3) {
-        if (member.whatsappNumber) {
-          await this.whatsappService.send(
-            member.whatsappNumber, 
-            `Hola ${member.fullName}, recuerda que en ${diffDays} día${diffDays > 1 ? 's' : ''} se vence tu membresía. 💪`, 
-            member.id
-          );
+        if (diffDays > 0 && diffDays <= 3) {
+          if (member.whatsappNumber) {
+            await this.whatsappService.send(
+              member.whatsappNumber, 
+              `Hola ${member.fullName}, recuerda que en ${diffDays} día${diffDays > 1 ? 's' : ''} se vence tu membresía. 💪`, 
+              member.id
+            );
+          }
+          for (const phone of owners) {
+            if (phone) await this.whatsappService.send(phone, `INFO: A ${member.fullName} se le vence la membresía en ${diffDays} día${diffDays > 1 ? 's' : ''}.`, 0);
+          }
+        } 
+        else if (diffDays === 0) {
+          let msg = `Hola ${member.fullName}, hoy es el último día de tu membresía. ¡Te esperamos para renovar!`;
+          if (member.whatsappNumber) await this.whatsappService.send(member.whatsappNumber, msg, member.id);
+          
+          for (const phone of owners) {
+            if (phone) await this.whatsappService.send(phone, `INFO: Hoy vence la membresía de ${member.fullName}.`, 0);
+          }
+        } 
+        else if (diffDays < 0 && diffDays >= -15) { // Tope preventivo de 15 días para evitar spam infinito
+          let overdueDays = Math.abs(diffDays);
+          let msg = `Hola ${member.fullName}, tu membresía tiene ${overdueDays} día${overdueDays > 1 ? 's' : ''} de vencid${overdueDays > 1 ? 'os' : 'o'}. ¡Pasa por el counter para ponerte al día y seguir entrenando!`;
+          if (member.whatsappNumber) await this.whatsappService.send(member.whatsappNumber, msg, member.id);
+          
+          for (const phone of owners) {
+            if (phone) await this.whatsappService.send(phone, `ALERTA: ${member.fullName} tiene ${overdueDays} día${overdueDays > 1 ? 's' : ''} de vencid${overdueDays > 1 ? 'os' : 'o'} su membresía. C.C: ${member.cedula || 'N/A'}.`, 0);
+          }
         }
-        for (const phone of owners) {
-          if (phone) await this.whatsappService.send(phone, `INFO: A ${member.fullName} se le vence la membresía en ${diffDays} día${diffDays > 1 ? 's' : ''}.`, 0);
-        }
-      } 
-      else if (diffDays === 0) {
-        let msg = `Hola ${member.fullName}, hoy es el último día de tu membresía. ¡Te esperamos para renovar!`;
-        if (member.whatsappNumber) await this.whatsappService.send(member.whatsappNumber, msg, member.id);
-        
-        for (const phone of owners) {
-          if (phone) await this.whatsappService.send(phone, `INFO: Hoy vence la membresía de ${member.fullName}.`, 0);
-        }
-      } 
-      else if (diffDays < 0 && diffDays >= -15) { // Tope preventivo de 15 días para evitar spam infinito
-        let overdueDays = Math.abs(diffDays);
-        let msg = `Hola ${member.fullName}, tu membresía tiene ${overdueDays} día${overdueDays > 1 ? 's' : ''} de vencid${overdueDays > 1 ? 'os' : 'o'}. ¡Pasa por el counter para ponerte al día y seguir entrenando!`;
-        if (member.whatsappNumber) await this.whatsappService.send(member.whatsappNumber, msg, member.id);
-        
-        for (const phone of owners) {
-          if (phone) await this.whatsappService.send(phone, `ALERTA: ${member.fullName} tiene ${overdueDays} día${overdueDays > 1 ? 's' : ''} de vencid${overdueDays > 1 ? 'os' : 'o'} su membresía. C.C: ${member.cedula || 'N/A'}.`, 0);
-        }
+      } catch (err) {
+        this.logger.error(`Error evaluando/enviando vencimientos para el miembro ${member.id}:`, err);
       }
     }
   }
