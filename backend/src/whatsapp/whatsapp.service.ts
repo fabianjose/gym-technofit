@@ -198,25 +198,22 @@ export class WhatsappService implements OnModuleInit, OnApplicationShutdown {
       const formattedTo = to.includes('@c.us') ? to : `${to.replace(/[^0-9]/g, '')}@c.us`;
       await this.client.sendMessage(formattedTo, message);
       
-      if (memberId && memberId !== 0) {
-        const log = new WhatsappLog();
-        log.memberId = memberId;
-        log.messageBody = message;
-        log.sentAt = new Date();
-        log.status = 'sent';
-        await this.logsRepository.save(log);
-      }
+      // Log all messages (including admin alerts where memberId might be 0)
+      const log = new WhatsappLog();
+      log.memberId = (memberId && memberId !== 0) ? memberId : null as any;
+      log.messageBody = message;
+      log.sentAt = new Date();
+      log.status = 'sent';
+      await this.logsRepository.save(log);
     } catch (e) {
       this.logger.error('Error sending message', e);
-      if (memberId && memberId !== 0) {
-        const log = new WhatsappLog();
-        log.memberId = memberId;
-        log.messageBody = message;
-        log.sentAt = new Date();
-        log.status = 'failed';
-        log.errorMessage = e.message;
-        await this.logsRepository.save(log);
-      }
+      const log = new WhatsappLog();
+      log.memberId = (memberId && memberId !== 0) ? memberId : null as any;
+      log.messageBody = message;
+      log.sentAt = new Date();
+      log.status = 'failed';
+      log.errorMessage = e.message;
+      await this.logsRepository.save(log);
     }
   }
 
