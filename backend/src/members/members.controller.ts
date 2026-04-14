@@ -14,9 +14,7 @@ export class MembersController {
   @UseGuards(JwtAuthGuard)
   @Get()
   async findAll() {
-    const list = await this.membersService.findAll();
-    console.log('Fechas raw de aaaaaa:', list.find(m => m.cedula === '11111111')?.registrationDate);
-    return list;
+    return await this.membersService.findAll();
   }
 
   @UseGuards(JwtAuthGuard)
