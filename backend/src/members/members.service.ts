@@ -19,7 +19,12 @@ export class MembersService {
     const [y, mo, d] = clean.split('-').map(Number);
     const newMo = mo === 12 ? 1 : mo + 1;
     const newY  = mo === 12 ? y + 1 : y;
-    return `${newY}-${newMo.toString().padStart(2, '0')}-${d.toString().padStart(2, '0')}`;
+    
+    // Clamp day to max days in the new month
+    const maxDays = new Date(newY, newMo, 0).getDate();
+    const newD = Math.min(d, maxDays);
+    
+    return `${newY}-${newMo.toString().padStart(2, '0')}-${newD.toString().padStart(2, '0')}`;
   }
 
   /** Normaliza cualquier valor de fecha a string YYYY-MM-DD */
