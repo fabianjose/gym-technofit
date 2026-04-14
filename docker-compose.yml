@@ -73,6 +73,7 @@ services:
       - "80:80"
     volumes:
       - ./gym_nginx.conf:/etc/nginx/conf.d/default.conf
+      - ./backend/uploads:/app/uploads
     depends_on:
       - frontend
       - backend

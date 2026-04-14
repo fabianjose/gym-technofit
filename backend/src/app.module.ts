@@ -61,6 +61,7 @@ import { PaymentMethodsModule } from './payment-methods/payment-methods.module';
         ],
         synchronize: true,
         timezone: 'Z',
+        charset: 'utf8mb4',
         extra: { dateStrings: true },
       }),
       inject: [ConfigService],
