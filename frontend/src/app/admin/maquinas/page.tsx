@@ -237,6 +237,24 @@ export default function MaquinasPage() {
                       EDITAR
                     </span>
                   </button>
+
+                  <button onClick={() => handleDelete(m.id)} style={{ 
+                    display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.4rem', cursor: 'pointer', 
+                    backgroundColor: 'rgba(0,0,0,0.2)', padding: '0.6rem', borderRadius: '12px', width: '70px',
+                    border: '1px solid var(--danger)',
+                    transition: 'all 0.2s ease'
+                  }} className="hover-lift">
+                    <div style={{ 
+                      backgroundColor: 'var(--danger)',
+                      color: '#000',
+                      padding: '0.4rem', borderRadius: '50%', display: 'flex' 
+                    }}>
+                      <Trash2 size={18} />
+                    </div>
+                    <span style={{ fontSize: '0.7rem', color: 'var(--danger)', fontWeight: 'bold' }}>
+                      BORRAR
+                    </span>
+                  </button>
                 </div>
               </div>
             ))}
