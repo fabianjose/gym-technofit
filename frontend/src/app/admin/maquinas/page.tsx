@@ -2,7 +2,7 @@
 "use client";
 import { useEffect, useState } from 'react';
 import axios from 'axios';
-import { Camera, Video, Image as ImageIcon, CheckCircle, Tag, Edit2, Folder, ArrowLeft } from 'lucide-react';
+import { Camera, Video, Image as ImageIcon, CheckCircle, Tag, Edit2, Folder, ArrowLeft, Trash2 } from 'lucide-react';
 
 export default function MaquinasPage() {
   const [machines, setMachines] = useState([]);
@@ -41,6 +41,16 @@ export default function MaquinasPage() {
     }
     setForm({ id: undefined, name: '', description: '', category: categories.length > 0 ? (categories[0] as any).name : 'General', showInPublic: true });
     fetchMachines();
+  };
+
+  const handleDelete = async (id: number) => {
+    if (!window.confirm('¿Estás seguro de eliminar este ejercicio? Se borrará permanentemente junto con sus referencias.')) return;
+    try {
+      await axios.delete(`/api/machines/${id}`, { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } });
+      fetchMachines();
+    } catch (e) {
+      alert('Error al eliminar. Puede que el ejercicio esté guardado en una plantilla de rutina actualmente.');
+    }
   };
 
   const handleUpload = async (id: number, file: File, type: 'photo' | 'video') => {
