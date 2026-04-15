@@ -37,7 +37,7 @@ export default function EjerciciosPage() {
     <div className="container" style={{ paddingBottom: '4rem' }}>
       <header style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.5rem', flexWrap: 'wrap' }}>
         <Link href="/" className="btn-secondary" style={{ padding: '0.6rem 1rem', borderRadius: '30px', fontSize: '0.9rem', flex: 'none' }}>
-          <ArrowLeft size={18} /> Landing
+          <ArrowLeft size={18} /> Inicio
         </Link>
         <h2 className="title" style={{ margin: 0, textAlign: 'left', flex: 1, fontSize: 'clamp(1.2rem, 4vw, 1.8rem)' }}>Catálogo de Ejercicios</h2>
       </header>
@@ -56,7 +56,7 @@ export default function EjerciciosPage() {
       {!isSearching && activeCat === null && (
         <>
           <h3 style={{ marginBottom: '1rem', color: 'var(--text-muted)' }}>Selecciona un Grupo Muscular</h3>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '1rem' }}>
+          <div className="grid-categories">
             {sortedCategories.map(cat => (
               <div 
                 key={cat} 
@@ -104,7 +104,7 @@ export default function EjerciciosPage() {
 
       {/* RESULTADOS: Se muestran si estamos buscando, o si entramos a una categoría */}
       {(isSearching || activeCat !== null) && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 250px), 1fr))', gap: '1.5rem' }}>
+        <div className="grid-exercises">
           {isSearching && filteredMachines.length === 0 && (
             <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' }}>
               No se encontraron ejercicios con ese nombre.
@@ -112,7 +112,7 @@ export default function EjerciciosPage() {
           )}
           
           {(isSearching ? filteredMachines : (activeCat ? grouped[activeCat] : []) || []).map((m: any) => (
-            <div key={m.id} className="card" style={{ padding: '1.2rem', display: 'flex', flexDirection: 'column', backgroundColor: 'var(--panel-bg)', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
+            <div key={m.id} className="card" style={{ padding: '1rem', display: 'flex', flexDirection: 'column', backgroundColor: 'var(--panel-bg)', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
               <div style={{ marginBottom: '0.8rem', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                 <h4 style={{ margin: 0, color: '#fff', fontSize: '1.15rem', lineHeight: '1.3' }}>{m.name}</h4>
                 {isSearching && (

@@ -45,13 +45,12 @@ export default function RutinaPage() {
           </div>
         </header>
 
-        <main style={{ padding: '1rem', flex: 1 }}>
+        <main style={{ padding: '1.5rem', flex: 1, maxWidth: '1400px', margin: '0 auto', width: '100%' }}>
           <div style={{ 
-            display: 'flex', 
-            flexWrap: 'wrap', 
-            justifyContent: 'center',
-            gap: '1rem', 
-            alignItems: 'flex-start' 
+            display: 'grid', 
+            gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
+            gap: '1.5rem', 
+            alignItems: 'start' 
           }}>
             {data.calendar
               .filter((day: any) => {
@@ -75,16 +74,16 @@ export default function RutinaPage() {
 
                 return (
                   <div key={day.id} style={{ 
-                    flex: '1 1 260px',
-                    maxWidth: '350px',
+                    width: '100%',
                     backgroundColor: isRest ? 'rgba(0,0,0,0.2)' : 'var(--panel-bg)',
                     border: isToday ? `2px solid ${primaryHighlight}` : (isRest ? '1px dashed var(--border-color)' : '1px solid var(--border-color)'),
                     boxShadow: isToday ? `0 0 20px rgba(226, 255, 67, 0.2)` : 'none',
-                    borderRadius: '12px',
+                    borderRadius: '16px',
                     display: 'flex',
                     flexDirection: 'column',
                     overflow: 'hidden',
-                    position: 'relative'
+                    position: 'relative',
+                    transition: 'transform 0.2s',
                   }}>
                     {isToday && (
                       <div style={{ position: 'absolute', top: 0, right: 0, backgroundColor: primaryHighlight, color: '#000', padding: '0.2rem 0.8rem', borderBottomLeftRadius: '12px', fontSize: '0.75rem', fontWeight: 'bold', zIndex: 2 }}>
