@@ -296,7 +296,19 @@ export default function MiembrosPage() {
 
                   <div>
                     <label style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>WhatsApp *</label>
-                    <input value={form.whatsappNumber} onChange={e => setForm({...form, whatsappNumber: e.target.value})} placeholder="+57300..." required style={{ marginBottom: 0, width: '100%', padding: '0.75rem', backgroundColor: 'var(--bg-color)', borderRadius: '8px', border: '1px solid var(--border-color)', color: '#fff' }} />
+                    <div style={{ display: 'flex' }}>
+                      <span style={{ padding: '0.75rem', backgroundColor: 'rgba(255,255,255,0.05)', border: '1px solid var(--border-color)', borderRight: 'none', borderRadius: '8px 0 0 8px', color: 'var(--text-muted)' }}>+57</span>
+                      <input 
+                        value={form.whatsappNumber.replace(/^\+57/, '').replace(/^\+/, '')} 
+                        onChange={e => {
+                          const val = e.target.value.replace(/[^\d]/g, '');
+                          setForm({...form, whatsappNumber: '+57' + val});
+                        }} 
+                        placeholder="3001234567" 
+                        required 
+                        style={{ marginBottom: 0, width: '100%', padding: '0.75rem', backgroundColor: 'var(--bg-color)', borderRadius: '0 8px 8px 0', border: '1px solid var(--border-color)', color: '#fff' }} 
+                      />
+                    </div>
                   </div>
                   
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', backgroundColor: 'rgba(255,255,255,0.05)', padding: '0.5rem', borderRadius: '8px' }}>
