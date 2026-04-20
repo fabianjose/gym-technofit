@@ -51,17 +51,19 @@ export class WhatsappService implements OnModuleInit, OnApplicationShutdown {
           clientId: 'gymflow-admin',
           dataPath: './.wwebjs_auth'
         }),
-        authTimeoutMs: 120000,
+        webVersionCache: { type: 'none' },
+        authTimeoutMs: 300000,
         puppeteer: { 
           args: [
             '--no-sandbox', 
             '--disable-setuid-sandbox', 
             '--disable-dev-shm-usage',
             '--disable-gpu',
-            '--disable-extensions'
+            '--disable-extensions',
+            '--shm-size=1gb'
           ],
-          timeout: 180000,
-          protocolTimeout: 180000,
+          timeout: 0,
+          protocolTimeout: 0,
           executablePath: process.env.CHROMIUM_PATH || undefined,
           handleSIGINT: false,
           handleSIGTERM: false,
