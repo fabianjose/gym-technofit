@@ -21,10 +21,13 @@ export class CronService {
     const config = await this.configService.getGlobalConfig();
     const reminderTime = config.reminderTime || '08:00';
     const [h, m] = reminderTime.split(':').map(Number);
-    const now = new Date();
+    
+    // Obtener la hora actual en Bogotá
+    const nowBogotaStr = new Date().toLocaleString("en-US", {timeZone: "America/Bogota"});
+    const now = new Date(nowBogotaStr);
     
     if (now.getHours() === h && now.getMinutes() === m) {
-       this.logger.log(`[Cron] Ejecutando recordatorios a las ${reminderTime}...`);
+       this.logger.log(`[Cron] Ejecutando recordatorios a las ${reminderTime} (Hora Colombia)...`);
        await this.checkExpirations(config);
        await this.checkBirthdays(config);
     }
@@ -52,19 +55,21 @@ export class CronService {
     const members = await this.membersService.findAll();
     const owners = config.ownerPhones || [];
 
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    const nowBogotaStr = new Date().toLocaleString("en-US", {timeZone: "America/Bogota"});
+    const bogotaDate = new Date(nowBogotaStr);
+    const today = new Date(bogotaDate.getFullYear(), bogotaDate.getMonth(), bogotaDate.getDate());
 
     for (const member of members) {
       try {
         if (!member.expirationDate) continue;
         if (!member.active) continue;
 
-        const expDate = new Date(member.expirationDate);
-        expDate.setHours(0, 0, 0, 0);
+        let eDateStr = typeof member.expirationDate === 'string' ? member.expirationDate.split('T')[0] : (member.expirationDate as Date).toISOString().split('T')[0];
+        const [eY, eM, eD] = eDateStr.split('-').map(Number);
+        const expDate = new Date(eY, eM - 1, eD);
         
         const diffTime = expDate.getTime() - today.getTime();
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
 
         if (diffDays > 0 && diffDays <= 3) {
           if (member.whatsappNumber) {
@@ -107,21 +112,33 @@ export class CronService {
     const emails = config.ownerEmails || [];
     const phones = config.ownerPhones || [];
 
-    const tomorrow = new Date();
-    tomorrow.setUTCDate(tomorrow.getUTCDate() + 1);
+    const nowBogotaStr = new Date().toLocaleString("en-US", {timeZone: "America/Bogota"});
+    const tomorrow = new Date(nowBogotaStr);
+    tomorrow.setDate(tomorrow.getDate() + 1);
     
-    const tMonth = tomorrow.getUTCMonth();
-    const tDay = tomorrow.getUTCDate();
-    const tYear = tomorrow.getUTCFullYear();
+    const tMonth = tomorrow.getMonth(); // 0-indexed
+    const tDay = tomorrow.getDate();
+    const tYear = tomorrow.getFullYear();
 
     let birthdayBoys: any[] = [];
 
     for (const member of members) {
       if (!member.birthDate) continue;
       if (!member.active) continue;
-      const bDate = new Date(member.birthDate);
-      if (bDate.getUTCMonth() === tMonth && bDate.getUTCDate() === tDay) {
-        const age = tYear - bDate.getUTCFullYear();
+      
+      let bYear, bMonth, bDay;
+      try {
+        const bDateStr = typeof member.birthDate === 'string' ? member.birthDate.split('T')[0] : (member.birthDate as Date).toISOString().split('T')[0];
+        const parts = bDateStr.split('-');
+        bYear = parseInt(parts[0], 10);
+        bMonth = parseInt(parts[1], 10) - 1; // 0-indexed
+        bDay = parseInt(parts[2], 10);
+      } catch (e) {
+        continue;
+      }
+      
+      if (bMonth === tMonth && bDay === tDay) {
+        const age = tYear - bYear;
         birthdayBoys.push({ ...member, age });
       }
     }
