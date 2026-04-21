@@ -232,7 +232,7 @@ export class WhatsappService implements OnModuleInit, OnApplicationShutdown {
       const { MessageMedia } = require('whatsapp-web.js');
       const formattedTo = to.includes('@c.us') ? to : `${to.replace(/[^0-9]/g, '')}@c.us`;
       const media = new MessageMedia('application/pdf', pdfBuffer.toString('base64'), filename);
-      await this.client.sendMessage(formattedTo, media, { caption });
+      await this.client.sendMessage(formattedTo, media, { caption, sendMediaAsDocument: true });
       this.logger.log(`PDF enviado exitosamente a ${formattedTo}`);
       return true;
     } catch (e) {
