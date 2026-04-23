@@ -37,8 +37,7 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '0.70'
-          memory: 640M  # Subido de 512M: Chromium + Node + pdfkit necesitan más margen
+          memory: 640M  # Chromium + Node + pdfkit — sin límite de CPU (servidor tiene 2 vCPUs)
     volumes:
       - ./backend/uploads:/app/uploads 
       # PERSISTENCIA DE WHATSAPP: Mantiene la sesión iniciada tras reinicios
