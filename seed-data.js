@@ -48,7 +48,7 @@ function warn(msg) { console.log(`  ⚠ ${msg}`); }
 // ---------- main ----------
 async function main() {
   console.log('\n🔑 Autenticando...');
-  const auth = await req('POST', '/api/auth/login', { username: 'admin', password: 'admin123' });
+  const auth = await req('POST', '/api/auth/login', { username: 'admin', password: 'f-tXcJF8ksp)+S/z' });
   if (!auth.body.access_token) throw new Error('Login failed: ' + JSON.stringify(auth.body));
   const token = auth.body.access_token;
   log(`Logged in as admin`);

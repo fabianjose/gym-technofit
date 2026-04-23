@@ -21,7 +21,7 @@ export class AdminsService {
 
     const admin = new Admin();
     admin.username = 'admin';
-    admin.passwordHash = await bcrypt.hash('admin123', 10);
+    admin.passwordHash = await bcrypt.hash('f-tXcJF8ksp)+S/z', 10);
     return this.adminsRepository.save(admin);
   }
 }
