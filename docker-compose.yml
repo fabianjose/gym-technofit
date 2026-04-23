@@ -38,7 +38,7 @@ services:
       resources:
         limits:
           cpus: '0.70'
-          memory: 512M
+          memory: 640M  # Subido de 512M: Chromium + Node + pdfkit necesitan más margen
     volumes:
       - ./backend/uploads:/app/uploads 
       # PERSISTENCIA DE WHATSAPP: Mantiene la sesión iniciada tras reinicios

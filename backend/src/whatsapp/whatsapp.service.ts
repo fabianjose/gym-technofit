@@ -60,7 +60,7 @@ export class WhatsappService implements OnModuleInit, OnApplicationShutdown {
             '--disable-dev-shm-usage',
             '--disable-gpu',
             '--disable-extensions',
-            '--shm-size=1gb'
+            '--shm-size=256mb' // Coherente con el límite real del contenedor (512MB)
           ],
           timeout: 0,
           protocolTimeout: 0,
@@ -157,6 +157,8 @@ export class WhatsappService implements OnModuleInit, OnApplicationShutdown {
         this.logger.log(`[Cron] Enviando rutina a ${member.fullName} (${member.whatsappNumber})`);
         const message = this.buildWhatsAppMessage(member, todayEntry);
         await this.send(member.whatsappNumber, message, member.id);
+        // Delay entre mensajes para no saturar la instancia de Chromium con envíos simultáneos
+        await new Promise(r => setTimeout(r, 4000));
       } else {
         this.logger.debug(`[Cron] No se encontró rutina para ${member.fullName} el día de hoy.`);
       }
@@ -209,7 +211,13 @@ export class WhatsappService implements OnModuleInit, OnApplicationShutdown {
         await this.logsRepository.save(log);
       }
     } catch (e) {
-      this.logger.error('Error sending message', e);
+      // El error 'No LID for user' ocurre cuando WhatsApp Web no encuentra el contacto
+      // en su nuevo sistema de identificación. Es informativo, no es un crash del sistema.
+      if (e?.message?.includes('No LID for user')) {
+        this.logger.warn(`[WhatsApp] Número ${to} no encontrado en WhatsApp (error LID). Verifica que el número sea correcto y tenga WhatsApp activo.`);
+      } else {
+        this.logger.error('Error sending message', e);
+      }
       if (memberId && memberId !== 0) {
         const log = new WhatsappLog();
         log.memberId = memberId;

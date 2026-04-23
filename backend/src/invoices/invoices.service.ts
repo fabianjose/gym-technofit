@@ -90,7 +90,7 @@ export class InvoicesService {
   } catch (e) {
     console.error('Fallo el envío asíncrono:', e);
   }
-}, 2000); // Esperamos 2 segundos después de guardar en DB
+}, 8000); // Esperamos 8 segundos para que WhatsApp Web esté idle antes de enviar el PDF
 }
 
     return savedInvoice;

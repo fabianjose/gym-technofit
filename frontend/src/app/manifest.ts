@@ -14,6 +14,7 @@ export default function manifest(): MetadataRoute.Manifest {
         src: '/logo-192.png',
         sizes: '192x192',
         type: 'image/png',
+        purpose: 'maskable any', // Requerido por Chrome Android para mostrar el ícono en homescreen
       },
       {
         src: '/logo-512.png',
