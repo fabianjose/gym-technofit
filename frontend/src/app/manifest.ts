@@ -3,12 +3,13 @@ import { MetadataRoute } from 'next'
 export default function manifest(): MetadataRoute.Manifest {
   return {
     name: 'Techno Fit',
-    short_name: 'Techno Fit',
+    short_name: 'TechnoFit',
     description: 'Sistema de Gestión de Rutinas para Gimnasio',
     start_url: '/',
+    scope: '/',
     display: 'standalone',
-    background_color: '#ffffff',
-    theme_color: '#000000',
+    background_color: '#111827',
+    theme_color: '#10b981',
     icons: [
       {
         src: '/logo-192.png',

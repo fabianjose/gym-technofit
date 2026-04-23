@@ -12,8 +12,28 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   useEffect(() => {
     setMounted(true);
     const token = localStorage.getItem('token');
-    if (!token && !pathname.includes('/login')) {
-      router.push('/admin/login');
+
+    if (!pathname.includes('/login')) {
+      if (!token) {
+        router.push('/admin/login');
+        return;
+      }
+
+      // Verificar si el token JWT ha expirado decodificando el payload (sin librería)
+      try {
+        const payloadBase64 = token.split('.')[1];
+        const payload = JSON.parse(atob(payloadBase64));
+        const nowInSeconds = Math.floor(Date.now() / 1000);
+        if (payload.exp && payload.exp < nowInSeconds) {
+          // Token vencido: limpiar y redirigir al login
+          localStorage.removeItem('token');
+          router.push('/admin/login');
+        }
+      } catch {
+        // Token malformado: limpiar y redirigir
+        localStorage.removeItem('token');
+        router.push('/admin/login');
+      }
     }
   }, [pathname]);
 
