@@ -187,7 +187,8 @@ export class WhatsappService implements OnModuleInit, OnApplicationShutdown {
       msg += `Notas del día:\n${entry.notes}\n\n`;
     }
 
-    msg += `💪 ¡A darle duro!`;
+    msg += `💪 ¡A darle duro!\n\n`;
+    msg += `📱 *Ver tu rutina completa:*\nhttps://gym.remotepcsolutions.com/rutina?cedula=${member.cedula}`;
     return msg;
   }
 

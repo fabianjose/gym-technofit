@@ -1,27 +1,49 @@
 "use client";
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 import axios from 'axios';
 import { Search, XCircle, ArrowLeft, PlayCircle, X, RotateCw } from 'lucide-react';
 import Link from 'next/link';
 
-export default function RutinaPage() {
+// Componente interno que usa useSearchParams (requiere Suspense en Next.js)
+function RutinaContent() {
+  const searchParams = useSearchParams();
   const [cedula, setCedula] = useState('');
   const [data, setData] = useState<any>(null);
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
   const [selectedVideo, setSelectedVideo] = useState<string | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  const handleSearch = async (e: React.FormEvent) => {
-    e.preventDefault();
+  // Función de búsqueda reutilizable (usada por el form y el auto-search)
+  const fetchRutina = async (cedulaValue: string) => {
+    if (!cedulaValue) return;
+    setLoading(true);
     try {
-      const res = await axios.get(`/api/public/routine?cedula=${cedula}`);
+      const res = await axios.get(`/api/public/routine?cedula=${cedulaValue}`);
       setData(res.data);
       setError('');
     } catch (err) {
       setError('Miembro no encontrado o sin rutina asignada.');
       setData(null);
+    } finally {
+      setLoading(false);
     }
+  };
+
+  // Auto-buscar si viene ?cedula= en la URL (link de WhatsApp)
+  useEffect(() => {
+    const cedulaParam = searchParams.get('cedula');
+    if (cedulaParam) {
+      setCedula(cedulaParam);
+      fetchRutina(cedulaParam);
+    }
+  }, [searchParams]);
+
+  const handleSearch = async (e: React.FormEvent) => {
+    e.preventDefault();
+    await fetchRutina(cedula);
   };
 
   const handleClear = () => {
@@ -205,9 +227,29 @@ export default function RutinaPage() {
           onChange={(e) => setCedula(e.target.value)}
           style={{ padding: '1.5rem', fontSize: '1.5rem', textAlign: 'center', borderRadius: '8px', marginBottom: '1.5rem' }}
         />
-        <button type="submit" className="btn-primary" style={{ width: '100%', padding: '1.5rem', borderRadius: '8px' }}>Buscar</button>
+        <button
+          type="submit"
+          className="btn-primary"
+          disabled={loading}
+          style={{ width: '100%', padding: '1.5rem', borderRadius: '8px', opacity: loading ? 0.7 : 1 }}
+        >
+          {loading ? 'Buscando...' : 'Buscar'}
+        </button>
       </form>
       {error && <p style={{ color: 'var(--danger)', textAlign: 'center', fontSize: '1.2rem', marginTop: '2rem', backgroundColor: 'rgba(255, 77, 77, 0.1)', padding: '1rem 2rem', borderRadius: '8px' }}>{error}</p>}
     </div>
+  );
+}
+
+// Wrapper con Suspense requerido por Next.js para useSearchParams
+export default function RutinaPage() {
+  return (
+    <Suspense fallback={
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', color: 'var(--primary-color)', fontSize: '1.2rem' }}>
+        Cargando rutina...
+      </div>
+    }>
+      <RutinaContent />
+    </Suspense>
   );
 }
