@@ -1,11 +1,18 @@
 import { NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 
 /**
  * Serves the PWA Web App Manifest for regular (non-admin) users.
  * The start_url points to '/' so the app opens on the home page.
+ * Uses absolute icon URLs so Chrome resolves them correctly regardless of scope.
  */
-export function GET() {
+export function GET(request: NextRequest) {
+  // Build the base URL from the incoming request so icons resolve correctly
+  // in any environment (local, staging, production) without hardcoding.
+  const { origin } = new URL(request.url);
+
   const manifest = {
+    id: '/',
     name: 'Techno Fit',
     short_name: 'TechnoFit',
     description: 'Sistema de Gestión de Rutinas para Gimnasio',
@@ -16,20 +23,16 @@ export function GET() {
     theme_color: '#10b981',
     icons: [
       {
-        src: '/logo-192.png',
+        src: `${origin}/logo-192.png`,
         sizes: '192x192',
         type: 'image/png',
         purpose: 'maskable any',
       },
       {
-        src: '/logo-512.png',
+        src: `${origin}/logo-512.png`,
         sizes: '512x512',
         type: 'image/png',
-      },
-      {
-        src: '/logo.png',
-        sizes: 'any',
-        type: 'image/png',
+        purpose: 'any',
       },
     ],
   };
