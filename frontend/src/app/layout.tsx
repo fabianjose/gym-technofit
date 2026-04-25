@@ -6,7 +6,9 @@ const inter = Inter({ subsets: ['latin'] })
 export const metadata = {
   title: 'Techno Fit',
   description: 'Sistema de Gestión de Rutinas para Gimnasio',
+  manifest: '/api/user-manifest',
 }
+
 
 export default function RootLayout({
   children,
