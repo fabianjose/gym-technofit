@@ -9,7 +9,7 @@ import AdminClientLayout from './AdminClientLayout';
  */
 export const metadata: Metadata = {
   // Override the root manifest for all /admin/* routes
-  manifest: '/api/admin-manifest',
+  manifest: '/admin-manifest.json',
   title: 'Techno Fit Admin',
   description: 'Panel de Administración - Techno Fit',
 };
