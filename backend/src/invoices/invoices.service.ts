@@ -21,6 +21,20 @@ export class InvoicesService {
     private readonly gymConfigService: GymConfigService,
   ) {}
 
+  /**
+   * Subtracts exactly 1 month from a YYYY-MM-DD string without using Date objects,
+   * preventing timezone-related off-by-one day errors.
+   */
+  private subtractOneMonth(dateStr: string): string {
+    const clean = dateStr.substring(0, 10);
+    const [y, mo, d] = clean.split('-').map(Number);
+    const newMo = mo === 1 ? 12 : mo - 1;
+    const newY  = mo === 1 ? y - 1 : y;
+    const maxDays = new Date(newY, newMo, 0).getDate();
+    const newD = Math.min(d, maxDays);
+    return `${newY}-${newMo.toString().padStart(2, '0')}-${newD.toString().padStart(2, '0')}`;
+  }
+
   async create(createInvoiceDto: CreateInvoiceDto) {
     const { memberId, planId, discountId, amountTotal } = createInvoiceDto;
 
@@ -54,10 +68,34 @@ export class InvoicesService {
 
     const savedInvoice = await this.invoiceRepository.save(invoice);
 
-    // Update member expiration date
-    let baseDate = new Date();
-    if (member.expirationDate && new Date(member.expirationDate) > new Date()) {
-      baseDate = new Date(member.expirationDate);
+    // Billing cycle is always anchored to the member's registration date.
+    // Paying late does NOT shift the cut date — the cycle keeps rolling from
+    // the last expirationDate regardless of when the invoice is issued.
+    //
+    // members.service.create() sets expirationDate = registrationDate as a placeholder,
+    // so we detect "first invoice ever" by checking expirationDate === registrationDate.
+    //
+    // Case 1 — First invoice (placeholder): base = registrationDate
+    // Case 2 — All subsequent invoices:     base = expirationDate (past or future)
+    const expStr = member.expirationDate
+      ? member.expirationDate.toString().substring(0, 10)
+      : null;
+    const regStr = member.registrationDate
+      ? member.registrationDate.toString().substring(0, 10)
+      : null;
+    const isFirstInvoice = !expStr || expStr === regStr;
+
+    let baseDate: Date;
+    if (isFirstInvoice && regStr) {
+      // Case 1: first invoice ever — start the cycle from the registration date
+      baseDate = new Date(regStr);
+    } else if (expStr) {
+      // Case 2: subsequent invoice — extend from the last expiration date,
+      // preserving the day-of-month anchor regardless of late payment
+      baseDate = new Date(expStr);
+    } else {
+      // Fallback: no dates available at all — use today
+      baseDate = new Date();
     }
     baseDate.setMonth(baseDate.getMonth() + 1);
     const formattedExpDate = baseDate.toISOString().split('T')[0];
@@ -127,9 +165,8 @@ export class InvoicesService {
     }
     
     if (invoice.member && invoice.member.expirationDate) {
-      const d = new Date(invoice.member.expirationDate);
-      d.setMonth(d.getMonth() - 1);
-      const formattedExpDate = d.toISOString().split('T')[0];
+      const expStr = invoice.member.expirationDate.toString().substring(0, 10);
+      const formattedExpDate = this.subtractOneMonth(expStr);
       await this.membersService.update(invoice.member.id, { expirationDate: formattedExpDate });
     }
 
@@ -141,9 +178,8 @@ export class InvoicesService {
     const invoice = await this.findOne(id);
     if (invoice.status === 'PAID') {
       if (invoice.member && invoice.member.expirationDate) {
-        const d = new Date(invoice.member.expirationDate);
-        d.setMonth(d.getMonth() - 1);
-        const formattedExpDate = d.toISOString().split('T')[0];
+        const expStr = invoice.member.expirationDate.toString().substring(0, 10);
+        const formattedExpDate = this.subtractOneMonth(expStr);
         await this.membersService.update(invoice.member.id, { expirationDate: formattedExpDate });
       }
     }

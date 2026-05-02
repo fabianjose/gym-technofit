@@ -48,6 +48,7 @@ export default function MiembrosPage() {
   const [deleteConfirm, setDeleteConfirm] = useState<{ open: boolean, id: number | null, name: string }>({ open: false, id: null, name: '' });
   const [successMsg, setSuccessMsg] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
 
   const showSuccess = (msg: string) => {
     setSuccessMsg(msg);
@@ -93,8 +94,22 @@ export default function MiembrosPage() {
     }
   };
 
+  const validateForm = (): boolean => {
+    const errors: Record<string, string> = {};
+    if (!form.cedula.trim()) errors.cedula = 'La cédula es obligatoria';
+    if (!form.fullName.trim()) errors.fullName = 'El nombre completo es obligatorio';
+    const phoneDigits = form.whatsappNumber.replace(/^\+57/, '').replace(/^\+/, '');
+    if (!phoneDigits.trim()) errors.whatsappNumber = 'El WhatsApp es obligatorio';
+    if (!form.registrationDate) errors.registrationDate = 'La fecha de inscripción es obligatoria';
+    if (!form.birthDate) errors.birthDate = 'La fecha de nacimiento es obligatoria';
+    if (!form.defaultPlanId) errors.defaultPlanId = 'El plan es obligatorio';
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!validateForm()) return;
     const [hourStr, minuteStr] = form.notifyTime.split(':');
     const hour = parseInt(hourStr, 10);
     const minute = parseInt(minuteStr, 10) || 0;
@@ -215,12 +230,25 @@ export default function MiembrosPage() {
   const resetForm = () => {
     setEditingId(null);
     setEmitInvoice(false);
+    setFormErrors({});
     setInvoiceForm({ planId: '', discountId: '', paymentMethod: 'Efectivo', amountTotal: '' });
     setForm({ cedula: '', fullName: '', email: '', whatsappNumber: '+57', notifyTime: '07:00', birthDate: '', registrationDate: new Date().toISOString().split('T')[0], expirationDate: '', defaultPlanId: '', defaultDiscountId: '', address: '', rh: '', emergencyContact: '', observations: '', active: true });
     setMeasurements({ peso: '', altura: '', pecho: '', brazos: '', cintura: '', piernas: '' });
     setActiveTab('personal');
     setShowModal(false);
   };
+
+  // Helper to build field border style depending on validation error
+  const fieldStyle = (field: string, extra?: React.CSSProperties): React.CSSProperties => ({
+    marginBottom: 0, width: '100%', padding: '0.75rem',
+    backgroundColor: 'var(--bg-color)', borderRadius: '8px',
+    border: `1px solid ${formErrors[field] ? 'var(--danger)' : 'var(--border-color)'}`,
+    color: '#fff',
+    ...extra
+  });
+
+  // Helper for required label asterisk
+  const RequiredMark = () => <span style={{ color: 'var(--danger)', marginLeft: '2px' }}>*</span>;
 
   const confirmDelete = (m: any) => {
     setDeleteConfirm({ open: true, id: m.id, name: m.fullName });
@@ -280,35 +308,38 @@ export default function MiembrosPage() {
               {activeTab === 'personal' ? (
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
                   <div>
-                    <label style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Cédula *</label>
-                    <input value={form.cedula} onChange={e => setForm({...form, cedula: e.target.value})} required style={{ marginBottom: 0, width: '100%', padding: '0.75rem', backgroundColor: 'var(--bg-color)', borderRadius: '8px', border: '1px solid var(--border-color)', color: '#fff' }} />
+                    <label style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Cédula <RequiredMark /></label>
+                    <input value={form.cedula} onChange={e => { setForm({...form, cedula: e.target.value}); setFormErrors(p => ({...p, cedula: ''})); }} style={fieldStyle('cedula')} />
+                    {formErrors.cedula && <span style={{ fontSize: '0.75rem', color: 'var(--danger)' }}>{formErrors.cedula}</span>}
                   </div>
                   
                   <div>
-                    <label style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Nombre Completo *</label>
-                    <input value={form.fullName} onChange={e => setForm({...form, fullName: e.target.value})} required style={{ marginBottom: 0, width: '100%', padding: '0.75rem', backgroundColor: 'var(--bg-color)', borderRadius: '8px', border: '1px solid var(--border-color)', color: '#fff' }} />
+                    <label style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Nombre Completo <RequiredMark /></label>
+                    <input value={form.fullName} onChange={e => { setForm({...form, fullName: e.target.value}); setFormErrors(p => ({...p, fullName: ''})); }} style={fieldStyle('fullName')} />
+                    {formErrors.fullName && <span style={{ fontSize: '0.75rem', color: 'var(--danger)' }}>{formErrors.fullName}</span>}
                   </div>
                   
                   <div style={{ gridColumn: '1 / -1' }}>
-                    <label style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Correo Electrónico</label>
-                    <input type="email" value={form.email} onChange={e => setForm({...form, email: e.target.value})} placeholder="ejemplo@correo.com" style={{ marginBottom: 0, width: '100%', padding: '0.75rem', backgroundColor: 'var(--bg-color)', borderRadius: '8px', border: '1px solid var(--border-color)', color: '#fff' }} />
+                    <label style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Correo Electrónico <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontStyle: 'italic' }}>(opcional)</span></label>
+                    <input type="email" value={form.email} onChange={e => setForm({...form, email: e.target.value})} placeholder="ejemplo@correo.com" style={fieldStyle('email')} />
                   </div>
 
                   <div>
-                    <label style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>WhatsApp *</label>
+                    <label style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>WhatsApp <RequiredMark /></label>
                     <div style={{ display: 'flex' }}>
-                      <span style={{ padding: '0.75rem', backgroundColor: 'rgba(255,255,255,0.05)', border: '1px solid var(--border-color)', borderRight: 'none', borderRadius: '8px 0 0 8px', color: 'var(--text-muted)' }}>+57</span>
+                      <span style={{ padding: '0.75rem', backgroundColor: 'rgba(255,255,255,0.05)', border: `1px solid ${formErrors.whatsappNumber ? 'var(--danger)' : 'var(--border-color)'}`, borderRight: 'none', borderRadius: '8px 0 0 8px', color: 'var(--text-muted)' }}>+57</span>
                       <input 
                         value={form.whatsappNumber.replace(/^\+57/, '').replace(/^\+/, '')} 
                         onChange={e => {
                           const val = e.target.value.replace(/[^\d]/g, '');
                           setForm({...form, whatsappNumber: '+57' + val});
+                          setFormErrors(p => ({...p, whatsappNumber: ''}));
                         }} 
                         placeholder="3001234567" 
-                        required 
-                        style={{ marginBottom: 0, width: '100%', padding: '0.75rem', backgroundColor: 'var(--bg-color)', borderRadius: '0 8px 8px 0', border: '1px solid var(--border-color)', color: '#fff' }} 
+                        style={{ marginBottom: 0, width: '100%', padding: '0.75rem', backgroundColor: 'var(--bg-color)', borderRadius: '0 8px 8px 0', border: `1px solid ${formErrors.whatsappNumber ? 'var(--danger)' : 'var(--border-color)'}`, color: '#fff' }} 
                       />
                     </div>
+                    {formErrors.whatsappNumber && <span style={{ fontSize: '0.75rem', color: 'var(--danger)' }}>{formErrors.whatsappNumber}</span>}
                   </div>
                   
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', backgroundColor: 'rgba(255,255,255,0.05)', padding: '0.5rem', borderRadius: '8px' }}>
@@ -318,44 +349,45 @@ export default function MiembrosPage() {
                     </label>
                   </div>
 
-
                   <div>
                     <label style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Alerta de Whatsapp (Hora)</label>
-                    <input type="time" value={form.notifyTime} onChange={e => setForm({...form, notifyTime: e.target.value})} style={{ marginBottom: 0, padding: '0.75rem', backgroundColor: 'var(--bg-color)', borderRadius: '8px', border: '1px solid var(--border-color)', color: '#fff', width: '100%' }} />
+                    <input type="time" value={form.notifyTime} onChange={e => setForm({...form, notifyTime: e.target.value})} style={fieldStyle('notifyTime', { width: '100%' })} />
                   </div>
 
                   <div>
-                    <label style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Fecha de Nacimiento</label>
-                    <input type="date" value={form.birthDate} onChange={e => setForm({...form, birthDate: e.target.value})} style={{ marginBottom: 0, padding: '0.75rem', backgroundColor: 'var(--bg-color)', borderRadius: '8px', border: '1px solid var(--border-color)', color: '#fff', width: '100%' }} />
+                    <label style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Fecha de Nacimiento <RequiredMark /></label>
+                    <input type="date" value={form.birthDate} onChange={e => { setForm({...form, birthDate: e.target.value}); setFormErrors(p => ({...p, birthDate: ''})); }} style={fieldStyle('birthDate', { width: '100%' })} />
+                    {formErrors.birthDate && <span style={{ fontSize: '0.75rem', color: 'var(--danger)' }}>{formErrors.birthDate}</span>}
                   </div>
 
                   <div>
-                    <label style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Fecha de Inscripción *</label>
-                    <input type="date" required value={form.registrationDate} onChange={e => setForm({...form, registrationDate: e.target.value})} style={{ marginBottom: 0, padding: '0.75rem', backgroundColor: 'var(--bg-color)', borderRadius: '8px', border: '1px solid var(--border-color)', color: '#fff', width: '100%' }} />
+                    <label style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Fecha de Inscripción <RequiredMark /></label>
+                    <input type="date" value={form.registrationDate} onChange={e => { setForm({...form, registrationDate: e.target.value}); setFormErrors(p => ({...p, registrationDate: ''})); }} style={fieldStyle('registrationDate', { width: '100%' })} />
+                    {formErrors.registrationDate && <span style={{ fontSize: '0.75rem', color: 'var(--danger)' }}>{formErrors.registrationDate}</span>}
                   </div>
 
                   <div style={{ gridColumn: '1 / -1', marginTop: '1rem', borderTop: '1px solid var(--border-color)', paddingTop: '1rem' }}>
-                    <label style={{ fontSize: '0.9rem', color: 'var(--primary-color)', fontWeight: 'bold' }}>Información Adicional (Opcional)</label>
+                    <label style={{ fontSize: '0.9rem', color: 'var(--primary-color)', fontWeight: 'bold' }}>Información Adicional <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontStyle: 'italic', fontWeight: 'normal' }}>(todos los campos son opcionales)</span></label>
                   </div>
 
                   <div>
                     <label style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Dirección</label>
-                    <input value={form.address} onChange={e => setForm({...form, address: e.target.value})} placeholder="Ej: Calle 123 #45-67..." style={{ marginBottom: 0, padding: '0.75rem', backgroundColor: 'var(--bg-color)', borderRadius: '8px', border: '1px solid var(--border-color)', color: '#fff', width: '100%' }} />
+                    <input value={form.address} onChange={e => setForm({...form, address: e.target.value})} placeholder="Ej: Calle 123 #45-67..." style={fieldStyle('address', { width: '100%' })} />
                   </div>
 
                   <div>
                     <label style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Tipo de Sangre (RH)</label>
-                    <input value={form.rh} onChange={e => setForm({...form, rh: e.target.value})} placeholder="Ej: O+" maxLength={10} style={{ marginBottom: 0, padding: '0.75rem', backgroundColor: 'var(--bg-color)', borderRadius: '8px', border: '1px solid var(--border-color)', color: '#fff', width: '100%' }} />
+                    <input value={form.rh} onChange={e => setForm({...form, rh: e.target.value})} placeholder="Ej: O+" maxLength={10} style={fieldStyle('rh', { width: '100%' })} />
                   </div>
 
                   <div style={{ gridColumn: '1 / -1' }}>
-                    <label style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Contacto de Emergencia</label>
-                    <input value={form.emergencyContact} onChange={e => setForm({...form, emergencyContact: e.target.value})} placeholder="Ej: Esposa - María Lopez 3001234567" style={{ marginBottom: 0, padding: '0.75rem', backgroundColor: 'var(--bg-color)', borderRadius: '8px', border: '1px solid var(--border-color)', color: '#fff', width: '100%' }} />
+                    <label style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Contacto de Emergencia <span style={{ fontSize: '0.75rem', fontStyle: 'italic' }}>(opcional)</span></label>
+                    <input value={form.emergencyContact} onChange={e => setForm({...form, emergencyContact: e.target.value})} placeholder="Ej: Esposa - María Lopez 3001234567" style={fieldStyle('emergencyContact', { width: '100%' })} />
                   </div>
 
                   <div style={{ gridColumn: '1 / -1' }}>
-                    <label style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Observaciones Generales</label>
-                    <textarea value={form.observations} onChange={e => setForm({...form, observations: e.target.value})} rows={2} placeholder="Condiciones médicas, lesiones, notas administrativas..." style={{ marginBottom: 0, padding: '0.75rem', backgroundColor: 'var(--bg-color)', borderRadius: '8px', border: '1px solid var(--border-color)', color: '#fff', width: '100%', resize: 'vertical' }} />
+                    <label style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Observaciones Generales <span style={{ fontSize: '0.75rem', fontStyle: 'italic' }}>(opcional)</span></label>
+                    <textarea value={form.observations} onChange={e => setForm({...form, observations: e.target.value})} rows={2} placeholder="Condiciones médicas, lesiones, notas administrativas..." style={{ ...fieldStyle('observations', { width: '100%' }), resize: 'vertical' }} />
                   </div>
 
                   <div style={{ gridColumn: '1 / -1', marginTop: '1rem', borderTop: '1px solid var(--border-color)', paddingTop: '1rem' }}>
@@ -363,21 +395,24 @@ export default function MiembrosPage() {
                   </div>
 
                   <div>
-                     <label style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Plan Predeterminado</label>
+                     <label style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+                       Plan Predeterminado <RequiredMark />
+                     </label>
                      <select 
                         value={form.defaultPlanId} 
-                        onChange={e => setForm({...form, defaultPlanId: e.target.value})}
-                        style={{ marginBottom: 0, width: '100%', padding: '0.75rem', backgroundColor: 'var(--bg-color)', borderRadius: '8px', border: '1px solid var(--border-color)', color: '#fff' }}
+                        onChange={e => { setForm({...form, defaultPlanId: e.target.value}); setFormErrors(p => ({...p, defaultPlanId: ''})); }}
+                        style={{ marginBottom: 0, width: '100%', padding: '0.75rem', backgroundColor: 'var(--bg-color)', borderRadius: '8px', border: `1px solid ${formErrors.defaultPlanId ? 'var(--danger)' : 'var(--border-color)'}`, color: '#fff' }}
                      >
                         <option value="">— Sin plan asignado —</option>
                         {plans.map((p: any) => (
                           <option key={p.id} value={p.id}>{p.name}</option>
                         ))}
                      </select>
+                     {formErrors.defaultPlanId && <span style={{ fontSize: '0.75rem', color: 'var(--danger)' }}>{formErrors.defaultPlanId}</span>}
                   </div>
 
                   <div>
-                     <label style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Descuento Predeterminado</label>
+                     <label style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Descuento Predeterminado <span style={{ fontSize: '0.75rem', fontStyle: 'italic' }}>(opcional)</span></label>
                      <select 
                         value={form.defaultDiscountId} 
                         onChange={e => setForm({...form, defaultDiscountId: e.target.value})}

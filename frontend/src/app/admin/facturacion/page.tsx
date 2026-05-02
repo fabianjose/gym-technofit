@@ -8,6 +8,18 @@ function FacturacionContent() {
   const searchParams = useSearchParams();
   const initialMemberId = searchParams.get('memberId');
 
+  /**
+   * Formats a date value from the API (string or Date) as DD/MM/YYYY
+   * without passing through new Date(), which shifts dates by the UTC offset.
+   */
+  const formatDate = (value: any): string => {
+    if (!value) return '';
+    const s = value.toString();
+    const match = s.match(/(\d{4})-(\d{2})-(\d{2})/);
+    if (!match) return s;
+    return `${match[3]}/${match[2]}/${match[1]}`;
+  };
+
   const [members, setMembers] = useState([]);
   const [plans, setPlans] = useState([]);
   const [discounts, setDiscounts] = useState([]);
@@ -290,7 +302,7 @@ function FacturacionContent() {
                 <td style={tdStyle}>{selectedMember.whatsappNumber}</td>
                 <td style={tdStyle}>
                   <span style={{ color: selectedMember.expirationDate ? 'var(--danger)' : 'var(--text-muted)' }}>
-                    {selectedMember.expirationDate ? new Date(selectedMember.expirationDate).toLocaleDateString() : 'Sin facturar'}
+                    {selectedMember.expirationDate ? formatDate(selectedMember.expirationDate) : 'Sin facturar'}
                   </span>
                 </td>
                 <td style={tdStyle}>
@@ -411,7 +423,7 @@ function FacturacionContent() {
                     <td style={tdStyle}>{inv.plan?.name || '—'}</td>
                     <td style={tdStyle}>{inv.discount ? `${inv.discount.name} (${inv.discount.percentage}%)` : '—'}</td>
                     <td style={{ ...tdStyle, fontWeight: 'bold', color: inv.status === 'ANNULLED' ? 'var(--text-muted)' : 'var(--primary-color)' }}>${Number(inv.amountTotal).toLocaleString()} COP</td>
-                    <td style={{ ...tdStyle, color: 'var(--text-muted)' }}>{new Date(inv.createdAt).toLocaleDateString()}</td>
+                    <td style={{ ...tdStyle, color: 'var(--text-muted)' }}>{formatDate(inv.createdAt)}</td>
                     <td style={{ ...tdStyle, textAlign: 'center', display: 'flex', gap: '0.5rem', justifyContent: 'center' }}>
                       {inv.status === 'PAID' && (
                         <>
