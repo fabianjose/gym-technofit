@@ -1,8 +1,78 @@
 "use client";
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import axios from 'axios';
 import { Edit2, X, Trash2, CheckCircle, Plus } from 'lucide-react';
 import Link from 'next/link';
+
+// ─── Date helpers ────────────────────────────────────────────────────────────
+// Internal storage: YYYY-MM-DD (what the backend expects)
+// Display format:   DD/MM/YYYY (what the user sees and types)
+
+/** Convert internal YYYY-MM-DD → display DD/MM/YYYY */
+const toDisplay = (internal: string): string => {
+  if (!internal || !/^\d{4}-\d{2}-\d{2}$/.test(internal)) return '';
+  const [y, m, d] = internal.split('-');
+  return `${d}/${m}/${y}`;
+};
+
+/** Convert display DD/MM/YYYY → internal YYYY-MM-DD (returns '' if invalid) */
+const toInternal = (display: string): string => {
+  const clean = display.replace(/[^\d]/g, '');
+  if (clean.length !== 8) return '';
+  const d = clean.slice(0, 2);
+  const m = clean.slice(2, 4);
+  const y = clean.slice(4, 8);
+  // Basic sanity check
+  if (Number(m) < 1 || Number(m) > 12 || Number(d) < 1 || Number(d) > 31) return '';
+  return `${y}-${m}-${d}`;
+};
+
+// ─── Masked date input component ─────────────────────────────────────────────
+interface DateInputProps {
+  /** YYYY-MM-DD value (internal) */
+  value: string;
+  onChange: (internalValue: string) => void;
+  style?: React.CSSProperties;
+  id?: string;
+}
+
+function DateInput({ value, onChange, style, id }: DateInputProps) {
+  const [raw, setRaw] = useState(toDisplay(value));
+  const isTyping = useRef(false);
+
+  // Sync display when parent value changes (e.g. on edit / reset)
+  useEffect(() => {
+    if (!isTyping.current) {
+      setRaw(toDisplay(value));
+    }
+  }, [value]);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    isTyping.current = true;
+    let digits = e.target.value.replace(/[^\d]/g, '').slice(0, 8);
+    // Auto-insert slashes: DD/MM/YYYY
+    let formatted = digits;
+    if (digits.length > 2) formatted = digits.slice(0, 2) + '/' + digits.slice(2);
+    if (digits.length > 4) formatted = digits.slice(0, 2) + '/' + digits.slice(2, 4) + '/' + digits.slice(4);
+    setRaw(formatted);
+    onChange(toInternal(formatted));
+    // Allow effect to run next time
+    setTimeout(() => { isTyping.current = false; }, 0);
+  };
+
+  return (
+    <input
+      id={id}
+      type="text"
+      inputMode="numeric"
+      placeholder="DD/MM/AAAA"
+      maxLength={10}
+      value={raw}
+      onChange={handleChange}
+      style={style}
+    />
+  );
+}
 
 export default function MiembrosPage() {
   const [members, setMembers] = useState([]);
@@ -356,13 +426,21 @@ export default function MiembrosPage() {
 
                   <div>
                     <label style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Fecha de Nacimiento <RequiredMark /></label>
-                    <input type="date" value={form.birthDate} onChange={e => { setForm({...form, birthDate: e.target.value}); setFormErrors(p => ({...p, birthDate: ''})); }} style={fieldStyle('birthDate', { width: '100%' })} />
+                    <DateInput
+                      value={form.birthDate}
+                      onChange={v => { setForm({...form, birthDate: v}); setFormErrors(p => ({...p, birthDate: ''})); }}
+                      style={fieldStyle('birthDate', { width: '100%' })}
+                    />
                     {formErrors.birthDate && <span style={{ fontSize: '0.75rem', color: 'var(--danger)' }}>{formErrors.birthDate}</span>}
                   </div>
 
                   <div>
                     <label style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Fecha de Inscripción <RequiredMark /></label>
-                    <input type="date" value={form.registrationDate} onChange={e => { setForm({...form, registrationDate: e.target.value}); setFormErrors(p => ({...p, registrationDate: ''})); }} style={fieldStyle('registrationDate', { width: '100%' })} />
+                    <DateInput
+                      value={form.registrationDate}
+                      onChange={v => { setForm({...form, registrationDate: v}); setFormErrors(p => ({...p, registrationDate: ''})); }}
+                      style={fieldStyle('registrationDate', { width: '100%' })}
+                    />
                     {formErrors.registrationDate && <span style={{ fontSize: '0.75rem', color: 'var(--danger)' }}>{formErrors.registrationDate}</span>}
                   </div>
 
