@@ -157,3 +157,89 @@ input:focus, select:focus, textarea:focus {
   outline: none;
   border-color: var(--primary-color);
 }
+
+/* ── Accordion de descripción ── */
+/* Desktop: siempre visible, sin toggle */
+.desc-accordion {
+  margin-bottom: 1rem;
+  flex: 1;
+}
+
+.desc-toggle {
+  display: none; /* oculto en desktop */
+}
+
+.desc-body {
+  display: none; /* en desktop no se usa */
+}
+
+.desc-desktop {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  line-height: 1.5;
+  display: block; /* visible en desktop */
+}
+
+@media (max-width: 600px) {
+  /* En mobile ocultamos la versión desktop y activamos el accordion */
+  .desc-desktop {
+    display: none;
+  }
+
+  .desc-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    background: rgba(0, 210, 138, 0.08);
+    border: 1px solid rgba(0, 210, 138, 0.25);
+    color: var(--primary-color);
+    font-size: 0.8rem;
+    font-weight: 600;
+    padding: 0.45rem 0.75rem;
+    border-radius: 6px;
+    cursor: pointer;
+    letter-spacing: 0.02em;
+    transition: background 0.2s;
+  }
+
+  .desc-toggle:active {
+    background: rgba(0, 210, 138, 0.18);
+  }
+
+  .desc-chevron {
+    display: inline-block;
+    font-size: 1rem;
+    line-height: 1;
+    transition: transform 0.3s ease;
+    transform-origin: center;
+  }
+
+  .desc-chevron--open {
+    transform: rotate(-180deg);
+  }
+
+  /* Cuerpo colapsable con max-height para animación suave */
+  .desc-body {
+    display: block;
+    overflow: hidden;
+    max-height: 0;
+    transition: max-height 0.35s ease, padding 0.25s ease;
+    padding: 0;
+  }
+
+  .desc-body--open {
+    max-height: 300px; /* suficiente para cualquier descripción */
+    padding-top: 0.6rem;
+  }
+
+  .desc-text {
+    color: var(--text-muted);
+    font-size: 0.82rem;
+    line-height: 1.5;
+    padding: 0.5rem 0.6rem;
+    background: rgba(255,255,255,0.03);
+    border-left: 2px solid var(--primary-color);
+    border-radius: 0 4px 4px 0;
+  }
+}

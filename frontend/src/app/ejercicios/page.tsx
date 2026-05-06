@@ -9,8 +9,12 @@ export default function EjerciciosPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedVideo, setSelectedVideo] = useState<string | null>(null);
   const [activeCat, setActiveCat] = useState<string | null>(null);
+  const [expandedDesc, setExpandedDesc] = useState<Record<number, boolean>>({});
   const videoRef = useRef<HTMLVideoElement>(null);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  const toggleDesc = (id: number) =>
+    setExpandedDesc(prev => ({ ...prev, [id]: !prev[id] }));
 
   useEffect(() => {
     axios.get('/api/public/machines').then(res => {
@@ -130,7 +134,24 @@ export default function EjerciciosPage() {
                 </div>
               )}
 
-              <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', flex: 1, marginBottom: '1rem', lineHeight: '1.4' }}>{m.description}</p>
+              {/* Descripción colapsable en mobile */}
+              {m.description && (
+                <div className="desc-accordion">
+                  <button
+                    className="desc-toggle"
+                    onClick={() => toggleDesc(m.id)}
+                    aria-expanded={!!expandedDesc[m.id]}
+                  >
+                    <span>{expandedDesc[m.id] ? 'Ocultar descripción' : 'Ver descripción'}</span>
+                    <span className={`desc-chevron ${expandedDesc[m.id] ? 'desc-chevron--open' : ''}`}>▾</span>
+                  </button>
+                  <div className={`desc-body ${expandedDesc[m.id] ? 'desc-body--open' : ''}`}>
+                    <p className="desc-text">{m.description}</p>
+                  </div>
+                  {/* En desktop se muestra directamente sin el toggle */}
+                  <p className="desc-desktop">{m.description}</p>
+                </div>
+              )}
               
               {m.videoUrl && (
                 <button 
