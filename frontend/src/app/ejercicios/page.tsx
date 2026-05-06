@@ -117,8 +117,8 @@ export default function EjerciciosPage() {
           
           {(isSearching ? filteredMachines : (activeCat ? grouped[activeCat] : []) || []).map((m: any) => (
             <div key={m.id} className="card" style={{ padding: '1rem', display: 'flex', flexDirection: 'column', backgroundColor: 'var(--panel-bg)', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
-              <div style={{ marginBottom: '0.8rem', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                <h4 style={{ margin: 0, color: '#fff', fontSize: '1.15rem', lineHeight: '1.3' }}>{m.name}</h4>
+              <div className="exercise-card-header" style={{ marginBottom: '0.8rem', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                <h4 className="exercise-card-title" style={{ margin: 0, color: '#fff', lineHeight: '1.3' }}>{m.name}</h4>
                 {isSearching && (
                   <span style={{ fontSize: '0.7rem', backgroundColor: 'var(--bg-color)', padding: '0.2rem 0.5rem', borderRadius: '4px', border: '1px solid var(--border-color)', color: 'var(--text-muted)', whiteSpace: 'nowrap', marginLeft: '0.5rem' }}>
                     {m.category || 'General'}
